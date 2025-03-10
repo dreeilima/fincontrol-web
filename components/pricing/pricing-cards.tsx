@@ -38,7 +38,7 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
         className={cn(
           "relative flex flex-col overflow-hidden rounded-3xl border shadow-sm",
           offer.title.toLocaleLowerCase() === "pro"
-            ? "-m-0.5 border-2 border-red-400"
+            ? "-m-0.5 border-2 border-green-500"
             : "",
         )}
         key={offer.title}
@@ -50,16 +50,16 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
 
           <div className="flex flex-row">
             <div className="flex items-end">
-              <div className="flex text-left text-3xl font-semibold leading-6">
-                {isYearly && offer.prices.monthly > 0 ? (
+              <div className="flex whitespace-nowrap text-left text-3xl font-semibold leading-6">
+                {isYearly ? (
                   <>
                     <span className="mr-2 text-muted-foreground/80 line-through">
-                      ${offer.prices.monthly}
+                      R$ {offer.prices.monthly.toFixed(2)}
                     </span>
-                    <span>${offer.prices.yearly / 12}</span>
+                    <span>R$ {(offer.prices.yearly / 12).toFixed(2)}</span>
                   </>
                 ) : (
-                  `$${offer.prices.monthly}`
+                  `R$ ${offer.prices.monthly.toFixed(2)}`
                 )}
               </div>
               <div className="-mb-1 ml-2 text-left text-sm font-medium text-muted-foreground">
@@ -67,20 +67,20 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
               </div>
             </div>
           </div>
-          {offer.prices.monthly > 0 ? (
+          {offer.prices.monthly > 0 && (
             <div className="text-left text-sm text-muted-foreground">
               {isYearly
-                ? `$${offer.prices.yearly} will be charged when annual`
-                : "when charged monthly"}
+                ? `R$ ${offer.prices.yearly.toFixed(2)} cobrado anualmente`
+                : "cobrado mensalmente"}
             </div>
-          ) : null}
+          )}
         </div>
 
         <div className="flex h-full flex-col justify-between gap-16 p-6">
           <ul className="space-y-2 text-left text-sm font-medium leading-normal">
             {offer.benefits.map((feature) => (
               <li className="flex items-start gap-x-3" key={feature}>
-                <Icons.check className="size-5 shrink-0 text-red-500" />
+                <Icons.check className="size-5 shrink-0 text-green-500" />
                 <p>{feature}</p>
               </li>
             ))}
@@ -98,7 +98,7 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
           </ul>
 
           {userId && subscriptionPlan ? (
-            offer.title === "Starter" ? (
+            offer.title === "básico" ? (
               <Link
                 href="/dashboard"
                 className={cn(
@@ -125,6 +125,12 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
                   ? "default"
                   : "outline"
               }
+              className={cn(
+                "w-full",
+                offer.title.toLocaleLowerCase() === "pro"
+                  ? "bg-green-500 hover:bg-green-600"
+                  : "",
+              )}
               rounded="full"
               onClick={() => setShowSignInModal(true)}
             >
@@ -139,7 +145,7 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
   return (
     <MaxWidthWrapper>
       <section className="flex flex-col items-center text-center">
-        <HeaderSection label="Pricing" title="Start at full speed !" />
+        <HeaderSection label="Preço" title="Comece a usar em poucos cliques!" />
 
         <div className="mb-4 mt-10 flex items-center gap-5">
           <ToggleGroup
@@ -155,14 +161,14 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
               className="rounded-full px-5 data-[state=on]:!bg-primary data-[state=on]:!text-primary-foreground"
               aria-label="Toggle yearly billing"
             >
-              Yearly (-20%)
+              Anual (-20%)
             </ToggleGroupItem>
             <ToggleGroupItem
               value="monthly"
               className="rounded-full px-5 data-[state=on]:!bg-primary data-[state=on]:!text-primary-foreground"
               aria-label="Toggle monthly billing"
             >
-              Monthly
+              Mensal
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
@@ -183,7 +189,6 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
           </a>{" "}
           para contatar nosso time de suporte.
           <br />
-          <strong>Você pode testar as assinaturas e não será cobrado.</strong>
         </p>
       </section>
     </MaxWidthWrapper>

@@ -5,58 +5,63 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 
-import { HeaderSection } from "../shared/header-section";
+const faqs = [
+  {
+    question: "Como funciona o controle financeiro pelo WhatsApp?",
+    answer:
+      "É simples! Basta enviar mensagens com suas receitas e despesas para nosso número. Nosso sistema registra automaticamente e organiza tudo para você. Você também pode solicitar relatórios e consultar seu saldo a qualquer momento.",
+  },
+  {
+    question: "Preciso instalar algum aplicativo?",
+    answer:
+      "Não! O Fincontrol funciona diretamente pelo WhatsApp. Você só precisa ter o WhatsApp instalado no seu celular, que provavelmente já tem.",
+  },
+  {
+    question: "Como são protegidos meus dados financeiros?",
+    answer:
+      "Utilizamos criptografia de ponta a ponta e seguimos os mais rigorosos padrões de segurança bancária. Seus dados são armazenados de forma segura e nunca são compartilhados com terceiros.",
+  },
+  {
+    question: "Posso mudar de plano depois?",
+    answer:
+      "Sim! Você pode fazer upgrade ou downgrade do seu plano a qualquer momento. As alterações entram em vigor no próximo ciclo de cobrança e você mantém todos os seus dados.",
+  },
 
-const pricingFaqData = [
   {
-    id: "item-1",
-    question: "What is the cost of the free plan?",
+    question: "Quais formas de pagamento são aceitas?",
     answer:
-      "Our free plan is completely free, with no monthly or annual charges. It's a great way to get started and explore our basic features.",
+      "Aceitamos cartões de crédito, PIX e boleto bancário. O pagamento é processado de forma segura através da plataforma Stripe.",
   },
   {
-    id: "item-2",
-    question: "How much does the Basic Monthly plan cost?",
+    question: "Posso usar em mais de um dispositivo?",
     answer:
-      "The Basic Monthly plan is priced at $15 per month. It provides access to our core features and is billed on a monthly basis.",
+      "Sim! Você pode usar o Fincontrol em qualquer dispositivo que tenha WhatsApp instalado, mantendo tudo sincronizado automaticamente.",
   },
   {
-    id: "item-3",
-    question: "What is the price of the Pro Monthly plan?",
+    question: "E se eu precisar de ajuda?",
     answer:
-      "The Pro Monthly plan is available for $25 per month. It offers advanced features and is billed on a monthly basis for added flexibility.",
-  },
-  {
-    id: "item-4",
-    question: "Do you offer any annual subscription plans?",
-    answer:
-      "Yes, we offer annual subscription plans for even more savings. The Basic Annual plan is $144 per year, and the Pro Annual plan is $300 per year.",
-  },
-  {
-    id: "item-5",
-    question: "Is there a trial period for the paid plans?",
-    answer:
-      "We offer a 14-day free trial for both the Pro Monthly and Pro Annual plans. It's a great way to experience all the features before committing to a paid subscription.",
+      "Nosso suporte está disponível diretamente pelo WhatsApp. Os planos Pro e Premium incluem atendimento prioritário e suporte VIP 24/7.",
   },
 ];
 
-export function PricingFaq() {
+export function PricingFAQ() {
   return (
-    <section className="container max-w-4xl py-2">
-      <HeaderSection
-        label="FAQ"
-        title="Frequently Asked Questions"
-        subtitle="Explore our comprehensive FAQ to find quick answers to common
-          inquiries. If you need further assistance, don't hesitate to
-          contact us for personalized help."
-      />
+    <section className="mx-auto max-w-4xl">
+      <div className="mb-12 text-center">
+        <h2 className="font-heading text-3xl">Perguntas Frequentes</h2>
+        <p className="mt-4 text-muted-foreground">
+          Tire suas dúvidas sobre o Fincontrol
+        </p>
+      </div>
 
-      <Accordion type="single" collapsible className="my-12 w-full">
-        {pricingFaqData.map((faqItem) => (
-          <AccordionItem key={faqItem.id} value={faqItem.id}>
-            <AccordionTrigger>{faqItem.question}</AccordionTrigger>
-            <AccordionContent className="text-sm text-muted-foreground sm:text-[15px]">
-              {faqItem.answer}
+      <Accordion type="single" collapsible className="w-full">
+        {faqs.map((faq, index) => (
+          <AccordionItem key={index} value={`item-${index}`}>
+            <AccordionTrigger className="text-left">
+              {faq.question}
+            </AccordionTrigger>
+            <AccordionContent className="text-muted-foreground">
+              {faq.answer}
             </AccordionContent>
           </AccordionItem>
         ))}

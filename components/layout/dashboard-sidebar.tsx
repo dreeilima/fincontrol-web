@@ -1,8 +1,10 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import fincontrolTrans from "@/public/_static/fincontrol-trans.png";
 import { NavItem, SidebarNavItem } from "@/types";
 import { Menu, PanelLeftClose, PanelRightClose } from "lucide-react";
 
@@ -64,22 +66,30 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
         <ScrollArea className="h-full overflow-y-auto border-r">
           <aside
             className={cn(
-              isSidebarExpanded ? "w-[220px] xl:w-[260px]" : "w-[68px]",
-              "hidden h-screen md:block",
+              "hidden h-screen transition-all duration-300 ease-in-out md:block",
+              isSidebarExpanded ? "w-[220px] xl:w-[260px]" : "w-[90px]",
             )}
           >
             <div className="flex h-full max-h-screen flex-1 flex-col gap-2">
               <div className="flex h-14 items-center p-4 lg:h-[60px]">
                 {isSidebarExpanded ? (
                   <Link href="#" className="flex items-center gap-2">
-                    <Icons.logo className="size-6" />
+                    <Image
+                      src={fincontrolTrans}
+                      alt="Fincontrol"
+                      className="size-8"
+                    />
                     <span className="font-urban text-xl font-bold">
                       {siteConfig.name}
                     </span>
                   </Link>
                 ) : (
                   <Link href="#" className="flex items-center justify-center">
-                    <Icons.logo className="size-6" />
+                    <Image
+                      src={fincontrolTrans}
+                      alt="Fincontrol"
+                      className="size-8"
+                    />
                   </Link>
                 )}
 
@@ -150,7 +160,7 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
                                     key={`link-tooltip-${item.title}`}
                                     href={item.disabled ? "#" : item.href}
                                     className={cn(
-                                      "flex items-center gap-3 rounded-md py-2 text-sm font-medium hover:bg-muted",
+                                      "flex items-center justify-center rounded-md px-3 py-2 text-sm font-medium hover:bg-muted",
                                       path === item.href
                                         ? "bg-muted"
                                         : "text-muted-foreground hover:text-accent-foreground",
@@ -158,7 +168,7 @@ export function DashboardSidebar({ links }: DashboardSidebarProps) {
                                         "cursor-not-allowed opacity-80 hover:bg-transparent hover:text-muted-foreground",
                                     )}
                                   >
-                                    <span className="flex size-full items-center justify-center">
+                                    <span className="flex items-center justify-center">
                                       <Icon className="size-5" />
                                     </span>
                                   </Link>
@@ -213,7 +223,11 @@ export function MobileSheetSidebar({ links }: DashboardSidebarProps) {
                   href="#"
                   className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  <Icons.logo className="size-6" />
+                  <Image
+                    src={fincontrolTrans}
+                    alt="Fincontrol"
+                    className="size-6"
+                  />
                   <span className="font-urban text-xl font-bold">
                     {siteConfig.name}
                   </span>

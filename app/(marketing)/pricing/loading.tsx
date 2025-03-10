@@ -7,11 +7,6 @@ export default function Loading() {
     <div className="flex w-full flex-col gap-16 py-8 md:py-8">
       <MaxWidthWrapper>
         <section className="flex flex-col items-center">
-          <div className="mx-auto flex w-full flex-col items-center gap-5">
-            <HeaderSection label="Pricing" title="Start at full speed !" />
-            <Skeleton className="mb-3 mt-5 h-8 w-1/5 rounded-full" />
-          </div>
-
           <div className="grid w-full gap-5 bg-inherit py-5 lg:grid-cols-3">
             <Skeleton className="h-[520px] w-[428px] rounded-3xl max-lg:mx-auto lg:w-full" />
             <Skeleton className="h-[520px] w-[428px] rounded-3xl max-lg:mx-auto lg:w-full" />

@@ -86,7 +86,6 @@ export function SignInModal({ isOpen, onOpenChange }: SignInModalProps) {
 
     try {
       if (isRegister) {
-        // Lógica de registro
         const response = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -109,13 +108,25 @@ export function SignInModal({ isOpen, onOpenChange }: SignInModalProps) {
         throw new Error("Credenciais inválidas");
       }
 
+      // Buscar informações do usuário após login
+      const userResponse = await fetch("/api/auth/me");
+      const userData = await userResponse.json();
+
       onOpenChange(false);
-      router.refresh();
       toast.success(
         isRegister
           ? "Conta criada com sucesso!"
           : "Login realizado com sucesso!",
       );
+
+      // Redirecionar baseado no papel do usuário
+      if (userData.role === "ADMIN") {
+        router.push("/admin");
+      } else {
+        router.push("/dashboard");
+      }
+
+      router.refresh();
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -125,54 +136,38 @@ export function SignInModal({ isOpen, onOpenChange }: SignInModalProps) {
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="gap-0 p-0 outline-none">
-        <div className="flex flex-col space-y-8 p-6">
+      <DialogContent className="gap-0 p-0 outline-none sm:max-w-[400px]">
+        <div className="relative flex flex-col space-y-6 p-6">
+          {/* Background decorativo - Adicionado z-index negativo */}
+          <div
+            className="absolute inset-0 -z-10 bg-gradient-to-b from-green-500/5 to-transparent"
+            aria-hidden="true"
+          />
+
           <DialogHeader className="space-y-1">
-            <DialogTitle className="text-2xl">
-              {isRegister ? "Criar conta" : "Entrar"}
+            <DialogTitle className="text-2xl font-bold tracking-tight">
+              {isRegister ? "Criar conta" : "Bem-vindo de volta"}
             </DialogTitle>
             <p className="text-sm text-muted-foreground">
               {isRegister
-                ? "Preencha os dados abaixo para criar sua conta"
-                : "Entre com sua conta para continuar"}
+                ? "Comece sua jornada financeira hoje"
+                : "Continue sua jornada financeira"}
             </p>
           </DialogHeader>
 
-          <div className="grid gap-6">
-            <Button
-              variant="outline"
-              className="relative"
-              disabled={isLoading}
-              onClick={() => signIn("google")}
-            >
-              {isLoading ? (
-                <Icons.spinner className="mr-2 size-4 animate-spin" />
-              ) : (
-                <Icons.google className="mr-2 size-4" />
-              )}
-              Continuar com Google
-            </Button>
-
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Ou continue com email
-                </span>
-              </div>
-            </div>
-
+          <div className="grid gap-4">
             <form onSubmit={handleSubmit} className="grid gap-4">
               {isRegister && (
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Nome</Label>
+                  <Label className="text-sm font-medium" htmlFor="name">
+                    Nome
+                  </Label>
                   <Input
                     id="name"
                     name="name"
                     type="text"
-                    placeholder="Seu nome completo"
+                    placeholder="João Silva"
+                    className="h-11"
                     value={formData.name}
                     onChange={handleChange}
                     required
@@ -181,12 +176,15 @@ export function SignInModal({ isOpen, onOpenChange }: SignInModalProps) {
               )}
 
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label className="text-sm font-medium" htmlFor="email">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="exemplo@email.com"
+                  placeholder="nome@exemplo.com"
+                  className="h-11"
                   value={formData.email}
                   onChange={handleChange}
                   required
@@ -194,44 +192,73 @@ export function SignInModal({ isOpen, onOpenChange }: SignInModalProps) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label className="text-sm font-medium" htmlFor="password">
+                  Senha
+                </Label>
                 <Input
                   id="password"
                   name="password"
                   type="password"
-                  placeholder="Mínimo 6 caracteres"
+                  placeholder="••••••"
+                  className="h-11"
                   value={formData.password}
                   onChange={handleChange}
                   required
                 />
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button
+                type="submit"
+                className="h-11 bg-green-500 hover:bg-green-600"
+                disabled={isLoading}
+              >
                 {isLoading && (
                   <Icons.spinner className="mr-2 size-4 animate-spin" />
                 )}
                 {isRegister ? "Criar conta" : "Entrar"}
               </Button>
             </form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-background px-2 text-muted-foreground">
+                  ou continue com
+                </span>
+              </div>
+            </div>
+
+            <Button
+              variant="outline"
+              className="relative h-11 hover:bg-green-500/5"
+              disabled={isLoading}
+              onClick={() => signIn("google")}
+            >
+              {isLoading ? (
+                <Icons.spinner className="mr-2 size-4 animate-spin" />
+              ) : (
+                <Icons.google className="mr-2 size-4" />
+              )}
+              <span className="text-sm font-medium">Google</span>
+            </Button>
           </div>
         </div>
-        <div className="flex items-center justify-center space-x-1 bg-secondary/50 p-6">
+
+        <div className="flex items-center justify-center gap-2 bg-muted/40 p-6">
           <p className="text-sm text-muted-foreground">
-            {isRegister ? "Já tem uma conta?" : "Não tem uma conta?"}
+            {isRegister ? "Já tem uma conta?" : "Novo por aqui?"}
           </p>
           <Button
             variant="link"
-            className="text-sm underline"
+            className="h-auto p-0 text-sm font-medium text-green-500 hover:text-green-600"
             onClick={() => {
               setIsRegister(!isRegister);
-              setFormData({
-                name: "",
-                email: "",
-                password: "",
-              });
+              setFormData({ name: "", email: "", password: "" });
             }}
           >
-            {isRegister ? "Faça login" : "Registre-se"}
+            {isRegister ? "Faça login" : "Crie sua conta"}
           </Button>
         </div>
       </DialogContent>

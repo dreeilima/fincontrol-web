@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowUpRight } from "lucide-react";
 
 import { features } from "@/config/landing";
 import { Button } from "@/components/ui/button";
@@ -8,47 +9,54 @@ import MaxWidthWrapper from "@/components/shared/max-width-wrapper";
 
 export default function Features() {
   return (
-    <section>
-      <div className="pb-6 pt-28">
+    <section className="bg-slate-50/50 dark:bg-slate-950/50">
+      <div className="pb-16 pt-24">
         <MaxWidthWrapper>
           <HeaderSection
-            label="Features"
-            title="Discover all features."
-            subtitle="Harum quae dolore inventore repudiandae? orrupti aut temporibus
-          ariatur."
+            label="Recursos"
+            title="Ferramentas Financeiras Completas"
+            subtitle="Descubra todas as funcionalidades que tornam o Fincontrol a escolha ideal para sua gestão financeira"
           />
 
-          <div className="mt-12 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((feature) => {
-              const Icon = Icons[feature.icon || "nextjs"];
+              const Icon = Icons[feature.icon || "chart"];
               return (
                 <div
-                  className="group relative overflow-hidden rounded-2xl border bg-background p-5 md:p-8"
+                  className="group relative overflow-hidden rounded-lg border bg-background p-6 transition-all hover:shadow-lg"
                   key={feature.title}
                 >
                   <div
                     aria-hidden="true"
-                    className="absolute inset-0 aspect-video -translate-y-1/2 rounded-full border bg-gradient-to-b from-purple-500/80 to-white opacity-25 blur-2xl duration-300 group-hover:-translate-y-1/4 dark:from-white dark:to-white dark:opacity-5 dark:group-hover:opacity-10"
+                    className="absolute inset-0 -translate-y-1/2 rounded-full bg-gradient-to-b from-green-500/20 to-green-600/20 opacity-0 blur-2xl transition-all duration-300 group-hover:opacity-100"
                   />
-                  <div className="relative">
-                    <div className="relative flex size-12 rounded-2xl border border-border shadow-sm *:relative *:m-auto *:size-6">
-                      <Icon />
+
+                  <div className="relative space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex size-10 items-center justify-center rounded-lg bg-green-500/10">
+                        <Icon className="size-5 text-green-500" />
+                      </div>
+                      <h3 className="font-medium text-blue-900 dark:text-white">
+                        {feature.title}
+                      </h3>
                     </div>
 
-                    <p className="mt-6 pb-6 text-muted-foreground">
+                    <p className="text-sm text-gray-500">
                       {feature.description}
                     </p>
 
-                    <div className="-mb-5 flex gap-3 border-t border-muted py-4 md:-mb-7">
+                    <div className="pt-4">
                       <Button
-                        variant="secondary"
+                        variant="ghost"
                         size="sm"
-                        rounded="xl"
-                        className="px-4"
+                        className="group/btn -ml-2 h-9 text-blue-900 hover:bg-green-500/10 hover:text-green-500 dark:text-white"
                       >
-                        <Link href="/" className="flex items-center gap-2">
-                          <span>Visit the site</span>
-                          <Icons.arrowUpRight className="size-4" />
+                        <Link
+                          href={feature.link || "/"}
+                          className="flex items-center gap-2"
+                        >
+                          <span>Saiba mais</span>
+                          <ArrowUpRight className="size-4 transition-transform group-hover/btn:-translate-y-0.5 group-hover/btn:translate-x-0.5" />
                         </Link>
                       </Button>
                     </div>

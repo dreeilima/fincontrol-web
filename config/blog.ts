@@ -6,20 +6,20 @@ export const BLOG_CATEGORIES: {
   {
     title: "News",
     slug: "news",
-    description: "Updates and announcements from Next SaaS Starter.",
+    description: "Atualizações e anúncios do FinControl.",
   },
   {
     title: "Education",
     slug: "education",
-    description: "Educational content about SaaS management.",
+    description: "Conteúdos educacionais sobre o FinControl.",
   },
 ];
 
 export const BLOG_AUTHORS = {
-  mickasmt: {
-    name: "mickasmt",
-    image: "/_static/avatars/mickasmt.png",
-    twitter: "miickasmt",
+  dreeilima: {
+    name: "Andrei Lima",
+    image: "/_static/avatars/dreeilima.png",
+    twitter: "dreeilima",
   },
   shadcn: {
     name: "shadcn",

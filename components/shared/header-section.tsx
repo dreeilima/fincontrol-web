@@ -1,17 +1,30 @@
+import { cn } from "@/lib/utils";
+
 interface HeaderSectionProps {
   label?: string;
   title: string;
   subtitle?: string;
+  labelClassName?: string;
 }
 
-export function HeaderSection({ label, title, subtitle }: HeaderSectionProps) {
+export function HeaderSection({
+  label,
+  title,
+  subtitle,
+  labelClassName,
+}: HeaderSectionProps) {
   return (
     <div className="flex flex-col items-center text-center">
-      {label ? (
-        <div className="text-gradient_indigo-purple mb-4 font-semibold">
+      {label && (
+        <span
+          className={cn(
+            "mb-6 rounded-lg bg-green-500/10 px-3 py-1 text-sm font-medium text-green-500",
+            labelClassName,
+          )}
+        >
           {label}
-        </div>
-      ) : null}
+        </span>
+      )}
       <h2 className="font-heading text-3xl md:text-4xl lg:text-[40px]">
         {title}
       </h2>

@@ -3,163 +3,162 @@ import { env } from "@/env.mjs";
 
 export const pricingData: SubscriptionPlan[] = [
   {
-    title: "Starter",
-    description: "Para iniciantes",
-    benefits: [
-      "Até 100 posts mensais",
-      "Análise e relatórios básicos",
-      "Acesso a modelos padrão",
-    ],
-    limitations: [
-      "Não tem prioridade para novas funcionalidades.",
-      "Suporte ao cliente limitado",
-      "Não tem custom branding",
-      "Acesso limitado a recursos de negócios.",
-    ],
+    title: "Básico",
+    description: "Ideal para começar seu controle financeiro",
     prices: {
-      monthly: 0,
-      yearly: 0,
+      monthly: 9.9,
+      yearly: 99.0, // ~15% desconto
     },
-    stripeIds: {
-      monthly: null,
-      yearly: null,
+    benefits: [
+      "Registro de gastos ilimitados",
+      "1 conta bancária",
+      "Relatórios básicos",
+      "Categorização manual",
+      "Suporte via WhatsApp",
+    ],
+    limitations: [],
+    priceId: {
+      test: {
+        monthly: "price_H5",
+        yearly: "price_H5Y",
+      },
+      production: {
+        monthly: "price_H5",
+        yearly: "price_H5Y",
+      },
     },
   },
   {
     title: "Pro",
-    description: "Unlock Advanced Features",
-    benefits: [
-      "Up to 500 monthly posts",
-      "Advanced analytics and reporting",
-      "Access to business templates",
-      "Priority customer support",
-      "Exclusive webinars and training.",
-    ],
-    limitations: [
-      "No custom branding",
-      "Limited access to business resources.",
-    ],
+    description: "Para quem quer mais controle e recursos",
     prices: {
-      monthly: 15,
-      yearly: 144,
+      monthly: 19.9,
+      yearly: 199.0, // ~15% desconto
     },
-    stripeIds: {
-      monthly: env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PLAN_ID,
-      yearly: env.NEXT_PUBLIC_STRIPE_PRO_YEARLY_PLAN_ID,
+    benefits: [
+      "Todas as features do plano Básico",
+      "Até 3 contas bancárias",
+      "Relatórios avançados",
+      "Metas financeiras",
+      "Categorização automática",
+      "Exportação de dados",
+      "Suporte prioritário",
+    ],
+    limitations: [],
+    priceId: {
+      test: {
+        monthly: "price_H5",
+        yearly: "price_H5Y",
+      },
+      production: {
+        monthly: "price_H5",
+        yearly: "price_H5Y",
+      },
     },
   },
   {
-    title: "Business",
-    description: "For Power Users",
+    title: "Premium",
+    description: "Solução completa para gestão financeira",
+    prices: {
+      monthly: 39.9,
+      yearly: 399.0, // ~15% desconto
+    },
     benefits: [
-      "Unlimited posts",
-      "Real-time analytics and reporting",
-      "Access to all templates, including custom branding",
-      "24/7 business customer support",
-      "Personalized onboarding and account management.",
+      "Todas as features do plano Pro",
+      "Contas bancárias ilimitadas",
+      "Relatórios personalizados",
+      "API de integração",
+      "Gestão multiusuário",
+      "Backup automático",
+      "Suporte VIP 24/7",
     ],
     limitations: [],
-    prices: {
-      monthly: 30,
-      yearly: 300,
-    },
-    stripeIds: {
-      monthly: env.NEXT_PUBLIC_STRIPE_BUSINESS_MONTHLY_PLAN_ID,
-      yearly: env.NEXT_PUBLIC_STRIPE_BUSINESS_YEARLY_PLAN_ID,
+    priceId: {
+      test: {
+        monthly: "price_H5",
+        yearly: "price_H5Y",
+      },
+      production: {
+        monthly: "price_H5",
+        yearly: "price_H5Y",
+      },
     },
   },
 ];
 
-export const plansColumns = [
-  "starter",
-  "pro",
-  "business",
-  "enterprise",
-] as const;
+export const plansColumns = ["básico", "pro", "premium"] as const;
 
 export const comparePlans: PlansRow[] = [
   {
-    feature: "Access to Analytics",
-    starter: true,
-    pro: true,
-    business: true,
-    enterprise: "Custom",
-    tooltip: "All plans include basic analytics for tracking performance.",
+    feature: "Registro de Transações",
+    básico: "Ilimitado",
+    pro: "Ilimitado",
+    premium: "Ilimitado",
+    tooltip: "Registre todas suas receitas e despesas sem limitações.",
   },
   {
-    feature: "Custom Branding",
-    starter: null,
-    pro: "500/mo",
-    business: "1,500/mo",
-    enterprise: "Unlimited",
-    tooltip: "Custom branding is available from the Pro plan onwards.",
+    feature: "Contas Bancárias",
+    básico: "1 conta",
+    pro: "Até 3 contas",
+    premium: "Ilimitadas",
+    tooltip: "Número de contas bancárias que você pode gerenciar.",
   },
   {
-    feature: "Priority Support",
-    starter: null,
-    pro: "Email",
-    business: "Email & Chat",
-    enterprise: "24/7 Support",
+    feature: "Categorização",
+    básico: "Manual",
+    pro: "Automática",
+    premium: "Automática + IA",
+    tooltip: "Como suas transações são organizadas por categoria.",
   },
   {
-    feature: "Advanced Reporting",
-    starter: null,
+    feature: "Relatórios",
+    básico: "Básicos",
+    pro: "Avançados",
+    premium: "Personalizados",
+    tooltip: "Tipos de relatórios disponíveis para análise financeira.",
+  },
+  {
+    feature: "Metas Financeiras",
+    básico: null,
+    pro: "Básicas",
+    premium: "Avançadas",
+    tooltip: "Defina e acompanhe suas metas financeiras.",
+  },
+  {
+    feature: "Suporte",
+    básico: "WhatsApp",
+    pro: "Prioritário",
+    premium: "VIP 24/7",
+    tooltip: "Canais de suporte disponíveis para ajuda.",
+  },
+  {
+    feature: "Exportação de Dados",
+    básico: "CSV",
+    pro: "CSV/Excel",
+    premium: "Todos os formatos",
+    tooltip: "Formatos disponíveis para exportação dos seus dados.",
+  },
+  {
+    feature: "Gestão Multiusuário",
+    básico: null,
     pro: null,
-    business: true,
-    enterprise: "Custom",
-    tooltip:
-      "Advanced reporting is available in Business and Enterprise plans.",
+    premium: "Disponível",
+    tooltip: "Compartilhe o acesso com outros usuários.",
   },
   {
-    feature: "Dedicated Manager",
-    starter: null,
-    pro: null,
-    business: null,
-    enterprise: true,
-    tooltip: "Enterprise plan includes a dedicated account manager.",
+    feature: "Backup",
+    básico: "Manual",
+    pro: "Automático",
+    premium: "Automático + Cloud",
+    tooltip: "Como seus dados são protegidos e armazenados.",
   },
   {
-    feature: "API Access",
-    starter: "Limited",
-    pro: "Standard",
-    business: "Enhanced",
-    enterprise: "Full",
+    feature: "Integração WhatsApp",
+    básico: "Básica",
+    pro: "Avançada",
+    premium: "Personalizada",
+    tooltip: "Recursos disponíveis via WhatsApp.",
   },
-  {
-    feature: "Monthly Webinars",
-    starter: false,
-    pro: true,
-    business: true,
-    enterprise: "Custom",
-    tooltip: "Pro and higher plans include access to monthly webinars.",
-  },
-  {
-    feature: "Custom Integrations",
-    starter: false,
-    pro: false,
-    business: "Available",
-    enterprise: "Available",
-    tooltip:
-      "Custom integrations are available in Business and Enterprise plans.",
-  },
-  {
-    feature: "Roles and Permissions",
-    starter: null,
-    pro: "Basic",
-    business: "Advanced",
-    enterprise: "Advanced",
-    tooltip:
-      "User roles and permissions management improves with higher plans.",
-  },
-  {
-    feature: "Onboarding Assistance",
-    starter: false,
-    pro: "Self-service",
-    business: "Assisted",
-    enterprise: "Full Service",
-    tooltip: "Higher plans include more comprehensive onboarding assistance.",
-  },
-  // Add more rows as needed
 ];
 
 export const PLANS = {

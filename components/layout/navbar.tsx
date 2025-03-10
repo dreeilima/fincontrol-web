@@ -1,8 +1,10 @@
 "use client";
 
 import { useContext } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSelectedLayoutSegment } from "next/navigation";
+import fincontrolTrans from "@/public/_static/fincontrol-trans.png";
 import { useSession } from "next-auth/react";
 
 import { docsConfig } from "@/config/docs";
@@ -39,7 +41,7 @@ export function NavBar({ scroll = false }: NavBarProps) {
 
   return (
     <header
-      className={`sticky top-0 z-40 flex w-full justify-center bg-background/60 backdrop-blur-xl transition-all ${
+      className={`sticky top-2 z-40 flex w-full justify-center bg-background/60 backdrop-blur-xl transition-all ${
         scroll ? (scrolled ? "border-b" : "bg-transparent") : "border-b"
       }`}
     >
@@ -49,7 +51,7 @@ export function NavBar({ scroll = false }: NavBarProps) {
       >
         <div className="flex gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-1.5">
-            <Icons.logo />
+            <Image src={fincontrolTrans} alt="Fincontrol" className="size-10" />
             <span className="font-urban text-xl font-bold">
               {siteConfig.name}
             </span>
@@ -78,7 +80,7 @@ export function NavBar({ scroll = false }: NavBarProps) {
         </div>
 
         <div className="flex items-center space-x-3">
-          {/* right header for docs */}
+          {/* Cabeçalho da direita para a página de documentação */}
           {documentation ? (
             <div className="hidden flex-1 items-center space-x-4 sm:justify-end lg:flex">
               <div className="hidden lg:flex lg:grow-0">
@@ -122,7 +124,7 @@ export function NavBar({ scroll = false }: NavBarProps) {
               rounded="full"
               onClick={() => setShowSignInModal(true)}
             >
-              <span>Sign In</span>
+              <span>Entrar</span>
               <Icons.arrowRight className="size-4" />
             </Button>
           ) : (

@@ -12,6 +12,8 @@ export function DashboardHeader() {
     switch (pathname) {
       case "/dashboard":
         return "Aqui está um resumo da sua vida financeira";
+      case "/admin":
+        return "Gerencie os usuários cadastrados no sistema e todas as métricas do sistema";
       case "/admin/usuarios":
         return "Gerencie os usuários cadastrados no sistema";
       case "/admin/categorias":

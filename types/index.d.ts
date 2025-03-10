@@ -44,20 +44,26 @@ export type DocsConfig = {
 };
 
 // subcriptions
-export type SubscriptionPlan = {
+export interface SubscriptionPlan {
   title: string;
   description: string;
-  benefits: string[];
-  limitations: string[];
   prices: {
     monthly: number;
     yearly: number;
   };
-  stripeIds: {
-    monthly: string | null;
-    yearly: string | null;
+  benefits: string[];
+  limitations: string[];
+  priceId: {
+    test: {
+      monthly: string;
+      yearly: string;
+    };
+    production: {
+      monthly: string;
+      yearly: string;
+    };
   };
-};
+}
 
 export type UserSubscriptionPlan = SubscriptionPlan &
   Pick<User, "stripeCustomerId" | "stripeSubscriptionId" | "stripePriceId"> & {

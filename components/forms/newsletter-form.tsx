@@ -53,12 +53,12 @@ export function NewsletterForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Subscribe to our newsletter</FormLabel>
+              <FormLabel>Assine nossa newsletter</FormLabel>
               <FormControl>
                 <Input
                   type="email"
                   className="rounded-full px-4"
-                  placeholder="janedoe@example.com"
+                  placeholder="newsletter@fincontrol.com"
                   {...field}
                 />
               </FormControl>
@@ -67,7 +67,7 @@ export function NewsletterForm() {
           )}
         />
         <Button type="submit" size="sm" rounded="full" className="px-4">
-          Subscribe
+          Assinar
         </Button>
       </form>
     </Form>

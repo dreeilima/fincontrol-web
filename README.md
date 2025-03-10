@@ -1,21 +1,21 @@
-<a href="https://next-saas-stripe-starter.vercel.app">
-  <img alt="SaaS Starter" src="public/_static/og.jpg">
-  <h1 align="center">Next SaaS Stripe Starter</h1>
+<a href="">
+  <img alt="FinControl" src="public/_static/og.jpg">
+  <h1 align="center">FinControl - Sistema de Controle Financeiro</h1>
 </a>
 
 <p align="center">
-  Start at full speed with SaaS Starter !
+  Comece a usar FinControl em poucos minutos!
 </p>
 
 <p align="center">
-  <a href="https://twitter.com/miickasmt">
-    <img src="https://img.shields.io/twitter/follow/miickasmt?style=flat&label=miickasmt&logo=twitter&color=0bf&logoColor=fff" alt="Mickasmt Twitter follower count" />
+  <a href="https://twitter.com/dreeilima">
+    <img src="https://img.shields.io/twitter/follow/dreeilima?style=flat&label=dreeilima&logo=twitter&color=0bf&logoColor=fff" alt="dreeilima X follower count" />
   </a>
 </p>
 
 <p align="center">
-  <a href="#introduction"><strong>Introduction</strong></a> ·
-  <a href="#installation"><strong>Installation</strong></a> ·
+  <a href="#introduction"><strong>Introdução</strong></a> ·
+  <a href="#installation"><strong>Instalação</strong></a> ·
   <a href="#tech-stack--features"><strong>Tech Stack + Features</strong></a> ·
   <a href="#author"><strong>Author</strong></a> ·
   <a href="#credits"><strong>Credits</strong></a>
@@ -26,19 +26,19 @@
 
 Empower your next project with the stack of Next.js 14, Prisma, Neon, Auth.js v5, Resend, React Email, Shadcn/ui, and Stripe.
 <br/>
-All seamlessly integrated with the SaaS Starter to accelerate your development and saas journey.
+All seamlessly integrated with the FinControl to accelerate your development and saas journey.
 
 ## Installation
 
-Clone & create this repo locally with the following command:
+    Clone & create this repo locally with the following command:
 
 ```bash
-npx create-next-app my-saas-project --example "https://github.com/mickasmt/next-saas-stripe-starter"
+npx create-next-app my-saas-project --example "https://github.com/dreeilima/fincontrol"
 ```
 
 Or, deploy with Vercel:
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fmickasmt%2Fnext-saas-stripe-starter)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fdreeilima%2Ffincontrol)
 
 ### Steps
 
@@ -66,12 +66,13 @@ pnpm run dev
 > Use this command for update your project: `ncu -i --format group`
 
 ## Roadmap
+
 - [ ] Upgrade eslint to v9
 - [ ] Add resend for success subscriptions
 
 ## Tech Stack + Features
 
-https://github.com/mickasmt/next-saas-stripe-starter/assets/62285783/828a4e0f-30e3-4cfe-96ff-4dfd9cd55124
+https://github.com/dreeilima/fincontrol/
 
 ### Frameworks
 
@@ -99,7 +100,7 @@ https://github.com/mickasmt/next-saas-stripe-starter/assets/62285783/828a4e0f-30
 
 - `useIntersectionObserver` – React hook to observe when an element enters or leaves the viewport
 - `useLocalStorage` – Persist data in the browser's local storage
-- `useScroll` – React hook to observe scroll position ([example](https://github.com/mickasmt/precedent/blob/main/components/layout/navbar.tsx#L12))
+- `useScroll` – React hook to observe scroll position ([example](https://github.com/dreeilima/fincontrol/blob/main/components/layout/navbar.tsx#L12))
 - `nFormatter` – Format numbers with suffixes like `1.2k` or `1.2M`
 - `capitalize` – Capitalize the first letter of a string
 - `truncate` – Truncate a string to a specified length
@@ -117,7 +118,7 @@ https://github.com/mickasmt/next-saas-stripe-starter/assets/62285783/828a4e0f-30
 
 ## Author
 
-Created by [@miickasmt](https://twitter.com/miickasmt) in 2023, released under the [MIT license](https://github.com/shadcn/taxonomy/blob/main/LICENSE.md).
+Created by [@dreeilima](https://twitter.com/dreeilima) in 2025, released under the [MIT license](https://github.com/dreeilima/fincontrol/blob/main/LICENSE.md).
 
 ## Credits
 

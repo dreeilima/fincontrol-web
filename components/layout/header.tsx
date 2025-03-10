@@ -9,7 +9,7 @@ export function Header() {
   return (
     <header>
       {/* ... outros elementos ... */}
-      <Button onClick={() => setShowSignInModal(true)}>Sign In</Button>
+      <Button onClick={() => setShowSignInModal(true)}>Entrar</Button>
       <SignInModal isOpen={showSignInModal} onOpenChange={setShowSignInModal} />
     </header>
   );

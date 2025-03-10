@@ -105,10 +105,9 @@ export function UserAccountNav() {
 
               <li
                 className="rounded-lg text-foreground hover:bg-muted"
-                onClick={(event) => {
-                  event.preventDefault();
+                onClick={() => {
                   signOut({
-                    callbackUrl: `${window.location.origin}/`,
+                    callbackUrl: "/",
                   });
                 }}
               >
@@ -180,7 +179,7 @@ export function UserAccountNav() {
           onSelect={(event) => {
             event.preventDefault();
             signOut({
-              callbackUrl: `${window.location.origin}/`,
+              callbackUrl: "/",
             });
           }}
         >

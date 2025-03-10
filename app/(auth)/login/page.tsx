@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
+import fincontrolTrans from "@/public/_static/fincontrol-trans.png";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
@@ -29,7 +31,11 @@ export default function LoginPage() {
       </Link>
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <div className="flex flex-col space-y-2 text-center">
-          <Icons.logo className="mx-auto size-6" />
+          <Image
+            src={fincontrolTrans}
+            alt="Fincontrol"
+            className="mx-auto size-6"
+          />
           <h1 className="text-2xl font-semibold tracking-tight">
             Welcome back
           </h1>

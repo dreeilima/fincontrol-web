@@ -2,12 +2,15 @@ import {
   Dispatch,
   SetStateAction,
   useCallback,
+  useEffect,
   useMemo,
   useState,
 } from "react";
+import { UserSubscriptionPlan } from "@/types";
 import { signOut, useSession } from "next-auth/react";
 import { toast } from "sonner";
 
+import { getUserSubscriptionPlan } from "@/lib/subscription";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
@@ -22,6 +25,16 @@ function DeleteAccountModal({
 }) {
   const { data: session } = useSession();
   const [deleting, setDeleting] = useState(false);
+  const [subscriptionPlan, setSubscriptionPlan] =
+    useState<UserSubscriptionPlan | null>(null);
+
+  useEffect(() => {
+    async function loadSubscription() {
+      const plan = await getUserSubscriptionPlan(session?.user?.id || "");
+      setSubscriptionPlan(plan);
+    }
+    loadSubscription();
+  }, [session?.user?.id]);
 
   async function deleteAccount() {
     setDeleting(true);
@@ -62,13 +75,15 @@ function DeleteAccountModal({
             image: session?.user?.image || null,
           }}
         />
-        <h3 className="text-lg font-semibold">Delete Account</h3>
+        <h3 className="text-lg font-semibold">Deletar conta</h3>
         <p className="text-center text-sm text-muted-foreground">
-          <b>Warning:</b> This will permanently delete your account and your
-          active subscription!
+          <b>Aviso:</b> Isso irá deletar permanentemente sua conta e sua
+          assinatura ativa!
         </p>
 
-        {/* TODO: Use getUserSubscriptionPlan(session.user.id) to display the user's subscription if he have a paid plan */}
+        {subscriptionPlan && (
+          <div>{/* Renderizar informações do plano aqui */}</div>
+        )}
       </div>
 
       <form
