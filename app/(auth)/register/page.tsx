@@ -1,18 +1,18 @@
-import { Suspense } from "react";
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import fincontrolTrans from "@/public/_static/fincontrol-trans.png";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 import { UserAuthForm } from "@/components/forms/user-auth-form";
 
-export const metadata = {
-  title: "Create an account",
-  description: "Create an account to get started.",
-};
-
 export default function RegisterPage() {
+  const searchParams = useSearchParams();
+  const selectedPlan = searchParams.get("plan");
+
   return (
     <div className="container grid h-screen w-screen flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
       <Link
@@ -40,9 +40,7 @@ export default function RegisterPage() {
               Insira seu e-mail abaixo para criar sua conta
             </p>
           </div>
-          <Suspense>
-            <UserAuthForm type="register" />
-          </Suspense>
+          <UserAuthForm type="register" />
           <p className="px-8 text-center text-sm text-muted-foreground">
             Ao clicar em continuar, você concorda com nossos{" "}
             <Link
@@ -60,6 +58,11 @@ export default function RegisterPage() {
             </Link>
             .
           </p>
+          {selectedPlan && (
+            <p className="mt-2 text-center text-sm text-muted-foreground">
+              Plano selecionado: {selectedPlan.toUpperCase()}
+            </p>
+          )}
         </div>
       </div>
     </div>

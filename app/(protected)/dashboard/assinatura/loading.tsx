@@ -1,15 +1,14 @@
-import { Skeleton } from "@/components/ui/skeleton";
+import { BillingFormSkeleton } from "@/components/billing/billing-form-skeleton";
 import { DashboardHeader } from "@/components/dashboard/header";
-import { CardSkeleton } from "@/components/shared/card-skeleton";
+import { DashboardShell } from "@/components/dashboard/shell";
 
-export default function DashboardBillingLoading() {
+export default function BillingLoading() {
   return (
-    <>
-      <DashboardHeader />
-      <div className="grid gap-8">
-        <Skeleton className="h-28 w-full rounded-lg md:h-24" />
-        <CardSkeleton />
+    <DashboardShell>
+      <div className="flex flex-col gap-6">
+        <DashboardHeader />
+        <BillingFormSkeleton />
       </div>
-    </>
+    </DashboardShell>
   );
 }

@@ -1,49 +1,56 @@
 import { NextResponse } from "next/server";
-import { UserRole } from "@prisma/client";
 import { hash } from "bcryptjs";
 
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const { name, email, password } = await req.json();
+    const { name, email, phone, password } = await req.json();
+
+    // Validar campos obrigatórios
+    if (!name || !email || !phone || !password) {
+      return new NextResponse("Todos os campos são obrigatórios", {
+        status: 400,
+      });
+    }
 
     // Verificar se usuário já existe
-    const existingUser = await db.user.findUnique({
+    const existingUser = await db.users.findUnique({
       where: {
         email,
       },
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: "Email já está em uso" },
-        { status: 400 },
-      );
+      return new NextResponse("Email já cadastrado", { status: 400 });
     }
 
-    // Hash da senha
-    const hashedPassword = await hash(password, 10);
-
-    // Criar usuário com role padrão USER
-    const user = await db.user.create({
-      data: {
-        name,
-        email,
-        password: hashedPassword,
-        role: UserRole.USER, // Definindo a role padrão
+    // Verificar se telefone já existe
+    const existingPhone = await db.users.findUnique({
+      where: {
+        phone,
       },
     });
 
-    return NextResponse.json(
-      { message: "Usuário criado com sucesso" },
-      { status: 201 },
-    );
+    if (existingPhone) {
+      return new NextResponse("Telefone já cadastrado", { status: 400 });
+    }
+
+    // Criar novo usuário
+    const hashedPassword = await hash(password, 10);
+    const user = await db.users.create({
+      data: {
+        name,
+        email,
+        phone,
+        password: hashedPassword,
+        role: "USER",
+      },
+    });
+
+    return NextResponse.json(user);
   } catch (error) {
-    console.error("Erro ao criar usuário:", error); // Log detalhado do erro
-    return NextResponse.json(
-      { error: "Erro ao criar usuário" },
-      { status: 500 },
-    );
+    console.error("REGISTRATION_ERROR", error);
+    return new NextResponse("Erro ao criar usuário", { status: 500 });
   }
 }

@@ -1,14 +1,20 @@
-import { PlansRow, SubscriptionPlan } from "types";
-import { env } from "@/env.mjs";
+import { PlansRow, SubscriptionPlan } from "@/types";
 
 export const pricingData: SubscriptionPlan[] = [
   {
     title: "Básico",
     description: "Ideal para começar seu controle financeiro",
-    prices: {
+    price: {
       monthly: 9.9,
       yearly: 99.0, // ~15% desconto
     },
+    features: [
+      "Registro de gastos ilimitados",
+      "1 conta bancária",
+      "Relatórios básicos",
+      "Categorização manual",
+      "Suporte via WhatsApp",
+    ],
     benefits: [
       "Registro de gastos ilimitados",
       "1 conta bancária",
@@ -19,22 +25,31 @@ export const pricingData: SubscriptionPlan[] = [
     limitations: [],
     priceId: {
       test: {
-        monthly: "price_H5",
-        yearly: "price_H5Y",
+        monthly: "price_1R06P8R9fFzxPkKldIyMcLC2",
+        yearly: "price_1R06P8R9fFzxPkKldIyMcLC2",
       },
       production: {
-        monthly: "price_H5",
-        yearly: "price_H5Y",
+        monthly: "price_1R06P8R9fFzxPkKldIyMcLC2",
+        yearly: "price_1R06P8R9fFzxPkKldIyMcLC2",
       },
     },
   },
   {
     title: "Pro",
     description: "Para quem quer mais controle e recursos",
-    prices: {
+    price: {
       monthly: 19.9,
       yearly: 199.0, // ~15% desconto
     },
+    features: [
+      "Todas as features do plano Básico",
+      "Até 3 contas bancárias",
+      "Relatórios avançados",
+      "Metas financeiras",
+      "Categorização automática",
+      "Exportação de dados",
+      "Suporte prioritário",
+    ],
     benefits: [
       "Todas as features do plano Básico",
       "Até 3 contas bancárias",
@@ -47,22 +62,31 @@ export const pricingData: SubscriptionPlan[] = [
     limitations: [],
     priceId: {
       test: {
-        monthly: "price_H5",
-        yearly: "price_H5Y",
+        monthly: "price_1R06Q3R9fFzxPkKlHN5yFNd6",
+        yearly: "price_1R06Q3R9fFzxPkKlHN5yFNd6",
       },
       production: {
-        monthly: "price_H5",
-        yearly: "price_H5Y",
+        monthly: "price_1R06Q3R9fFzxPkKlHN5yFNd6",
+        yearly: "price_1R06Q3R9fFzxPkKlHN5yFNd6",
       },
     },
   },
   {
     title: "Premium",
     description: "Solução completa para gestão financeira",
-    prices: {
+    price: {
       monthly: 39.9,
       yearly: 399.0, // ~15% desconto
     },
+    features: [
+      "Todas as features do plano Pro",
+      "Contas bancárias ilimitadas",
+      "Relatórios personalizados",
+      "API de integração",
+      "Gestão multiusuário",
+      "Backup automático",
+      "Suporte VIP 24/7",
+    ],
     benefits: [
       "Todas as features do plano Pro",
       "Contas bancárias ilimitadas",
@@ -75,12 +99,12 @@ export const pricingData: SubscriptionPlan[] = [
     limitations: [],
     priceId: {
       test: {
-        monthly: "price_H5",
-        yearly: "price_H5Y",
+        monthly: "price_1R06RrR9fFzxPkKlvtrHmggX",
+        yearly: "price_1R06RrR9fFzxPkKlvtrHmggX",
       },
       production: {
-        monthly: "price_H5",
-        yearly: "price_H5Y",
+        monthly: "price_1R06RrR9fFzxPkKlvtrHmggX",
+        yearly: "price_1R06RrR9fFzxPkKlvtrHmggX",
       },
     },
   },

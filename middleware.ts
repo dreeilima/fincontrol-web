@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import authConfig from "@/auth.config";
+import { authConfig } from "@/auth.config";
 import NextAuth from "next-auth";
 
 const { auth } = NextAuth({
@@ -13,12 +13,22 @@ export default auth((req) => {
   const isLoggedIn = !!req.auth;
 
   const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
+  const isCheckoutApiRoute = nextUrl.pathname.startsWith(
+    "/api/create-checkout-session",
+  );
   const isPublicRoute = ["/", "/login", "/register"].includes(nextUrl.pathname);
-  const isDashboardRoute = nextUrl.pathname.startsWith("/dashboard");
+  const isProtectedRoute = nextUrl.pathname.startsWith("/dashboard");
+
+  // Permitir rotas de API de checkout
+  if (isCheckoutApiRoute) {
+    return NextResponse.next();
+  }
 
   // Redirecionar usuários não autenticados para login
-  if (isDashboardRoute && !isLoggedIn) {
-    return NextResponse.redirect(new URL("/login", nextUrl));
+  if (isProtectedRoute && !isLoggedIn) {
+    const loginUrl = new URL("/login", nextUrl);
+    loginUrl.searchParams.set("callbackUrl", nextUrl.href);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Redirecionar usuários autenticados do login para dashboard
@@ -29,20 +39,10 @@ export default auth((req) => {
   return NextResponse.next();
 });
 
-export function middleware(request: NextRequest) {
-  // Clone the request headers
-  const requestHeaders = new Headers(request.headers);
-
-  // Add pathname to headers
-  requestHeaders.set("x-pathname", request.nextUrl.pathname);
-
-  return NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
-}
-
 export const config = {
-  matcher: ["/((?!.+\\.[\\w]+$|_next).*)", "/", "/(api|trpc)(.*)"],
+  matcher: [
+    "/dashboard/:path*",
+    "/checkout/:path*",
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
 };

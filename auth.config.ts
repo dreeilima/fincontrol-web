@@ -1,50 +1,63 @@
 import { compare } from "bcryptjs";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import Google from "next-auth/providers/google";
+import { z } from "zod";
 
 import { db } from "@/lib/db";
 
-export default {
+export const authConfig = {
   providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    }),
     Credentials({
-      credentials: {
-        email: { label: "Email", type: "email" },
-        password: { label: "Senha", type: "password" },
-      },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error("Credenciais inválidas");
-        }
+        const parsedCredentials = z
+          .object({ email: z.string().email(), password: z.string().min(6) })
+          .safeParse(credentials);
 
-        const user = await db.user.findUnique({
-          where: { email: credentials.email as string },
-        });
+        if (!parsedCredentials.success) return null;
 
-        console.log("Tentativa de login:", {
-          email: credentials.email,
-          found: !!user,
-        });
+        const { email, password } = parsedCredentials.data;
+        const user = await db.users.findUnique({ where: { email } });
+        if (!user || !(await compare(password, user.password))) return null;
 
-        if (!user || !user.password) {
-          throw new Error("Usuário não encontrado");
-        }
-
-        const isPasswordValid = await compare(
-          credentials.password as string,
-          user.password,
-        );
-
-        if (!isPasswordValid) {
-          throw new Error("Senha incorreta");
-        }
-
-        return user;
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role === "ADMIN" ? "admin" : "user",
+          phone: user.phone,
+          stripe_customer_id: user.stripe_customer_id,
+          stripe_subscription_id: user.stripe_subscription_id,
+          stripe_price_id: user.stripe_price_id,
+          stripe_current_period_end: user.stripe_current_period_end,
+        };
       },
     }),
   ],
+  callbacks: {
+    async session({ session, token }) {
+      session.user = {
+        ...session.user,
+        id: token.id as string,
+        name: token.name as string,
+        email: token.email as string,
+        role: token.role as "admin" | "user",
+        phone: token.phone as string,
+        stripe_customer_id: token.stripe_customer_id as string | null,
+        stripe_subscription_id: token.stripe_subscription_id as string | null,
+        stripe_price_id: token.stripe_price_id as string | null,
+        stripe_current_period_end:
+          token.stripe_current_period_end as Date | null,
+      };
+      return session;
+    },
+    async jwt({ token, user }) {
+      if (user) {
+        token = { ...token, ...user };
+      }
+      return token;
+    },
+  },
+  pages: {
+    signIn: "/login",
+  },
 } satisfies NextAuthConfig;

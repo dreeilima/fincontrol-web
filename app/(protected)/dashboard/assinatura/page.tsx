@@ -1,4 +1,6 @@
-import { getCurrentUser } from "@/lib/session";
+import { redirect } from "next/navigation";
+
+import { auth } from "@/lib/auth";
 import { constructMetadata } from "@/lib/utils";
 import { BillingForm } from "@/components/billing/billing-form";
 import { DashboardHeader } from "@/components/dashboard/header";
@@ -10,21 +12,24 @@ export const metadata = constructMetadata({
 });
 
 export default async function BillingPage() {
-  const user = await getCurrentUser();
+  const session = await auth();
+
+  if (!session?.users) {
+    redirect("/login");
+  }
+
+  const subscriptionPlan = {
+    stripeCustomerId: session.users.stripe_customer_id,
+    stripeSubscriptionId: session.users.stripe_subscription_id,
+    stripePriceId: session.users.stripe_price_id,
+    stripeCurrentPeriodEnd: session.users.stripe_current_period_end,
+  };
 
   return (
     <DashboardShell>
       <div className="flex flex-col gap-6">
         <DashboardHeader />
-        <BillingForm
-          subscriptionPlan={{
-            ...user,
-            stripeCustomerId: user?.stripeCustomerId ?? null,
-            stripeSubscriptionId: user?.stripeSubscriptionId ?? null,
-            stripePriceId: user?.stripePriceId ?? null,
-            stripeCurrentPeriodEnd: user?.stripeCurrentPeriodEnd ?? null,
-          }}
-        />
+        <BillingForm subscriptionPlan={subscriptionPlan} />
       </div>
     </DashboardShell>
   );

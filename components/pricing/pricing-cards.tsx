@@ -2,6 +2,7 @@
 
 import { useContext, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { UserSubscriptionPlan } from "@/types";
 
 import { SubscriptionPlan } from "@/types/index";
@@ -22,11 +23,13 @@ interface PricingCardsProps {
 
 export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
   const isYearlyDefault =
-    !subscriptionPlan?.stripeCustomerId || subscriptionPlan.interval === "year"
+    !subscriptionPlan?.stripeCustomerId ||
+    subscriptionPlan.stripePriceId?.includes("yearly")
       ? true
       : false;
   const [isYearly, setIsYearly] = useState<boolean>(!!isYearlyDefault);
   const { setShowSignInModal } = useContext(ModalContext);
+  const router = useRouter();
 
   const toggleBilling = () => {
     setIsYearly(!isYearly);
@@ -54,12 +57,12 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
                 {isYearly ? (
                   <>
                     <span className="mr-2 text-muted-foreground/80 line-through">
-                      R$ {offer.prices.monthly.toFixed(2)}
+                      R$ {offer.price.monthly.toFixed(2)}
                     </span>
-                    <span>R$ {(offer.prices.yearly / 12).toFixed(2)}</span>
+                    <span>R$ {(offer.price.yearly / 12).toFixed(2)}</span>
                   </>
                 ) : (
-                  `R$ ${offer.prices.monthly.toFixed(2)}`
+                  `R$ ${offer.price.monthly.toFixed(2)}`
                 )}
               </div>
               <div className="-mb-1 ml-2 text-left text-sm font-medium text-muted-foreground">
@@ -67,10 +70,10 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
               </div>
             </div>
           </div>
-          {offer.prices.monthly > 0 && (
+          {offer.price.monthly > 0 && (
             <div className="text-left text-sm text-muted-foreground">
               {isYearly
-                ? `R$ ${offer.prices.yearly.toFixed(2)} cobrado anualmente`
+                ? `R$ ${offer.price.yearly.toFixed(2)} cobrado anualmente`
                 : "cobrado mensalmente"}
             </div>
           )}
@@ -78,7 +81,7 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
 
         <div className="flex h-full flex-col justify-between gap-16 p-6">
           <ul className="space-y-2 text-left text-sm font-medium leading-normal">
-            {offer.benefits.map((feature) => (
+            {offer.features.map((feature) => (
               <li className="flex items-start gap-x-3" key={feature}>
                 <Icons.check className="size-5 shrink-0 text-green-500" />
                 <p>{feature}</p>
@@ -120,21 +123,18 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
             )
           ) : (
             <Button
-              variant={
-                offer.title.toLocaleLowerCase() === "pro"
-                  ? "default"
-                  : "outline"
-              }
               className={cn(
                 "w-full",
-                offer.title.toLocaleLowerCase() === "pro"
+                offer.title.toLowerCase() === "pro"
                   ? "bg-green-500 hover:bg-green-600"
                   : "",
               )}
               rounded="full"
-              onClick={() => setShowSignInModal(true)}
+              onClick={() =>
+                router.push(`/register?plan=${offer.title.toLowerCase()}`)
+              }
             >
-              Entrar
+              Começar agora
             </Button>
           )}
         </div>

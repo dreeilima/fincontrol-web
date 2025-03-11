@@ -1,6 +1,6 @@
-import { User } from "next-auth";
+import { redirect } from "next/navigation";
 
-import { getCurrentUser } from "@/lib/session";
+import { auth } from "@/lib/auth";
 import { constructMetadata } from "@/lib/utils";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
@@ -12,13 +12,17 @@ export const metadata = constructMetadata({
 });
 
 export default async function SettingsPage() {
-  const user = await getCurrentUser();
+  const session = await auth();
+
+  if (!session?.users) {
+    redirect("/login");
+  }
 
   return (
     <DashboardShell>
       <div className="flex flex-col gap-6">
         <DashboardHeader />
-        <UserSettings user={user as User} />
+        <UserSettings user={session.users} />
       </div>
     </DashboardShell>
   );

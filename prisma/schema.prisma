@@ -2,112 +2,19 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// Comentado temporariamente para desenvolvimento web
+// generator py {
+//   provider                    = "prisma-client-py"
+//   recursive_type_depth        = "-1"
+//   enable_experimental_decimal = "true"
+// }
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model BankAccount {
-  id           String        @id @default(uuid()) @db.Uuid
-  userId       String        @map("user_id") @db.Uuid
-  name         String
-  balance      Decimal       @db.Decimal
-  type         String
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user         User          @relation(fields: [userId], references: [id])
-  transactions Transaction[] @relation("BankAccountToTransactions")
-
-  @@map("bank_accounts")
-}
-
-model Category {
-  id           String        @id @default(uuid()) @db.Uuid
-  userId       String        @map("user_id") @db.Uuid
-  name         String
-  type         String
-  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  color        String?
-  icon         String?
-  user         User          @relation(fields: [userId], references: [id])
-  transactions Transaction[] @relation("CategoryToTransactions")
-  isDefault    Boolean       @default(false)
-
-  @@unique([userId, name])
-  @@map("categories")
-}
-
-model Profile {
-  id        String   @id @default(uuid()) @db.Uuid
-  fullName  String   @map("full_name")
-  email     String
-  phone     String
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user      User     @relation(fields: [id], references: [id], onDelete: Cascade)
-
-  @@map("profiles")
-}
-
-model Transaction {
-  id            String       @id @default(uuid()) @db.Uuid
-  userId        String       @map("user_id") @db.Uuid
-  amount        Decimal      @db.Decimal(10, 2)
-  description   String?
-  categoryName  String       @map("category")
-  type          String
-  date          DateTime     @db.Timestamptz(6)
-  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
-  bankAccountId String?      @db.Uuid
-  categoryId    String?      @db.Uuid
-  accountId     String?      @db.Uuid
-  account       Account?     @relation("AccountToTransactions", fields: [accountId], references: [id])
-  bankAccount   BankAccount? @relation("BankAccountToTransactions", fields: [bankAccountId], references: [id])
-  category      Category?    @relation("CategoryToTransactions", fields: [categoryId], references: [id])
-  user          User         @relation("UserToTransactions", fields: [userId], references: [id])
-
-  @@index([categoryName])
-  @@index([userId, date])
-  @@map("transactions")
-}
-
-model User {
-  id                     String        @id @default(uuid()) @db.Uuid
-  name                   String?
-  email                  String?       @unique
-  password               String?
-  createdAt              DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt              DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-  role                   UserRole      @default(USER)
-  avatarUrl              String?       @map("avatar_url")
-  bio                    String?
-  company                String?
-  website                String?
-  location               String?
-  notificationEmail      Boolean       @default(true) @map("notification_email")
-  notificationPush       Boolean       @default(true) @map("notification_push")
-  theme                  String?
-  language               String?
-  isActive               Boolean       @default(true) @map("is_active")
-  stripeCurrentPeriodEnd DateTime?     @map("stripe_current_period_end")
-  stripeCustomerId       String?       @map("stripe_customer_id")
-  stripePriceId          String?       @map("stripe_price_id")
-  stripeSubscriptionId   String?       @map("stripe_subscription_id")
-  emailNotifications     Boolean       @default(true)
-  marketingEmails        Boolean       @default(false)
-  accounts               Account[]
-  bankAccounts           BankAccount[]
-  categories             Category[]
-  profile                Profile?
-  sessions               Session[]
-  transactions           Transaction[] @relation("UserToTransactions")
-
-  @@map("users")
-}
-
-model Account {
+model accounts {
   type              String
   provider          String
   providerAccountId String
@@ -118,52 +25,131 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt         DateTime      @map("updated_at") @db.Timestamptz(6)
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @updatedAt @db.Timestamptz(6)
   name              String
-  balance           Float         @default(0)
-  id                String        @id @default(uuid()) @db.Uuid
-  userId            String        @db.Uuid
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  transactions      Transaction[] @relation("AccountToTransactions")
+  balance           Float          @default(0)
+  id                String         @id
+  userId            String
+  users             users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      transactions[]
 
   @@unique([provider, providerAccountId])
   @@index([userId])
-  @@map("accounts")
 }
 
-model Session {
+model bank_accounts {
+  id           String         @id
+  user_id      String
+  name         String
+  balance      Decimal        @db.Decimal
+  type         String
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime       @updatedAt @db.Timestamptz(6)
+  users        users          @relation(fields: [user_id], references: [id])
+  transactions transactions[]
+}
+
+model categories {
+  id           String         @id
+  user_id      String
+  name         String
+  type         String
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  color        String?
+  icon         String?
+  updated_at   DateTime       @updatedAt @db.Timestamptz(6)
+  users        users          @relation(fields: [user_id], references: [id])
+  transactions transactions[]
+
+  @@unique([user_id, name])
+}
+
+model profiles {
+  id         String   @id
+  full_name  String
+  email      String
+  phone      String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  user       users    @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model sessions {
   sessionToken String   @unique
   expires      DateTime
-  id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @db.Uuid
-  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id           String   @id
+  userId       String
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @updatedAt @db.Timestamptz(6)
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@map("sessions")
 }
 
-model VerificationToken {
+model transactions {
+  id            String         @id
+  user_id       String
+  amount        Decimal        @db.Decimal(10, 2)
+  description   String?
+  category      String
+  type          String
+  date          DateTime       @db.Timestamptz(6)
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  bankAccountId String?
+  categoryId    String?
+  accountId     String?
+  updated_at    DateTime       @updatedAt @db.Timestamptz(6)
+  accounts      accounts?      @relation(fields: [accountId], references: [id])
+  bank_accounts bank_accounts? @relation(fields: [bankAccountId], references: [id])
+  categories    categories?    @relation(fields: [categoryId], references: [id])
+  users         users          @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, date])
+  @@index([category])
+}
+
+model users {
+  id                        String          @id @default(uuid())
+  name                      String
+  email                     String          @unique
+  password                  String
+  created_at                DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime        @updatedAt @db.Timestamptz(6)
+  role                      UserRole        @default(USER)
+  avatar_url                String?
+  bio                       String?
+  company                   String?
+  website                   String?
+  location                  String?
+  notification_email        Boolean         @default(true)
+  notification_push         Boolean         @default(true)
+  theme                     String?
+  language                  String?
+  is_active                 Boolean         @default(true)
+  stripe_current_period_end DateTime?
+  stripe_customer_id        String?
+  stripe_price_id           String?
+  stripe_subscription_id    String?
+  emailNotifications        Boolean         @default(true)
+  marketingEmails           Boolean         @default(false)
+  phone                     String          @unique
+  accounts                  accounts[]
+  bank_accounts             bank_accounts[]
+  categories                categories[]
+  profile                   profiles?
+  sessions                  sessions[]
+  transactions              transactions[]
+}
+
+model verification_tokens {
   identifier String
   token      String   @unique
   expires    DateTime
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
 
   @@unique([identifier, token])
-  @@map("verification_tokens")
-}
-
-enum UserRole {
-  ADMIN
-  USER
-}
-
-enum TransactionType {
-  INCOME
-  EXPENSE
 }
 
 enum AccountType {
@@ -172,4 +158,14 @@ enum AccountType {
   CREDIT_CARD
   INVESTMENT
   CASH
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum UserRole {
+  ADMIN
+  USER
 }

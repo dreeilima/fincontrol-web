@@ -1,16 +1,17 @@
 "use client";
 
-import { useTransition } from "react";
-import { generateUserStripe } from "@/actions/generate-user-stripe";
+import { useState } from "react";
 import { SubscriptionPlan, UserSubscriptionPlan } from "@/types";
+import { toast } from "sonner";
 
+import { getStripe } from "@/lib/stripe";
 import { Button } from "@/components/ui/button";
 import { Icons } from "@/components/shared/icons";
 
 interface BillingFormButtonProps {
+  year: boolean;
   offer: SubscriptionPlan;
   subscriptionPlan: UserSubscriptionPlan;
-  year: boolean;
 }
 
 export function BillingFormButton({
@@ -18,34 +19,50 @@ export function BillingFormButton({
   offer,
   subscriptionPlan,
 }: BillingFormButtonProps) {
-  let [isPending, startTransition] = useTransition();
-  const generateUserStripeSession = generateUserStripe.bind(
-    null,
-    offer.stripeIds[year ? "anual" : "mensal"],
-  );
+  const [isLoading, setIsLoading] = useState(false);
 
-  const stripeSessionAction = () =>
-    startTransition(async () => await generateUserStripeSession());
+  const handleSubmit = async () => {
+    setIsLoading(true);
 
-  const userOffer =
-    subscriptionPlan.stripePriceId ===
-    offer.stripeIds[year ? "anual" : "mensal"];
+    try {
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          priceId: year
+            ? offer.priceId.production.yearly
+            : offer.priceId.production.monthly,
+        }),
+      });
+
+      const { sessionId } = await response.json();
+      const stripe = await getStripe();
+      const result = await stripe.redirectToCheckout({ sessionId });
+
+      if (result?.error) {
+        throw new Error(result.error.message);
+      }
+    } catch (error) {
+      toast.error("Erro ao processar pagamento");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Button
-      variant={userOffer ? "default" : "outline"}
+      onClick={handleSubmit}
+      className="w-full bg-green-500 hover:bg-green-600"
+      disabled={isLoading}
       rounded="full"
-      className="w-full"
-      disabled={isPending}
-      onClick={stripeSessionAction}
     >
-      {isPending ? (
-        <>
-          <Icons.spinner className="mr-2 size-4 animate-spin" /> Carregando...
-        </>
-      ) : (
-        <>{userOffer ? "Gerenciar assinatura" : "Atualizar"}</>
-      )}
+      {isLoading && <Icons.spinner className="mr-2 size-4 animate-spin" />}
+      {subscriptionPlan?.stripePriceId ===
+      offer.priceId.production[year ? "yearly" : "monthly"]
+        ? "Gerenciar assinatura"
+        : "Atualizar plano"}
     </Button>
   );
 }

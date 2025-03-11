@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { User } from "next-auth";
@@ -7,227 +8,138 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
+import { settingsSchema } from "@/lib/validations/settings";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { Switch } from "@/components/ui/switch";
-import { DeleteAccountDialog } from "@/components/settings/delete-account-dialog";
-import { UserAvatar } from "@/components/shared/user-avatar";
-
-const profileFormSchema = z.object({
-  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("Email inválido"),
-});
-
-const notificationsFormSchema = z.object({
-  emailNotifications: z.boolean(),
-  marketingEmails: z.boolean(),
-});
+import { Icons } from "@/components/shared/icons";
 
 interface UserSettingsProps {
   user: User;
 }
 
+type FormData = z.infer<typeof settingsSchema>;
+
 export function UserSettings({ user }: UserSettingsProps) {
   const router = useRouter();
-  const profileForm = useForm({
-    resolver: zodResolver(profileFormSchema),
+  const [isLoading, setIsLoading] = useState(false);
+
+  const form = useForm<FormData>({
+    resolver: zodResolver(settingsSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
+      phone: user?.phone || "",
     },
   });
 
-  const notificationsForm = useForm({
-    resolver: zodResolver(notificationsFormSchema),
-    defaultValues: {
-      emailNotifications: user.emailNotifications ?? true,
-      marketingEmails: user.marketingEmails ?? false,
-    },
-  });
+  async function onSubmit(data: FormData) {
+    setIsLoading(true);
 
-  async function onProfileSubmit(data: z.infer<typeof profileFormSchema>) {
     try {
-      const response = await fetch("/api/user/profile", {
+      const response = await fetch("/api/users/update", {
         method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
       });
 
-      if (!response.ok) throw new Error("Falha ao atualizar perfil");
+      if (!response.ok) {
+        throw new Error("Erro ao atualizar informações");
+      }
 
-      toast.success("Perfil atualizado com sucesso!");
+      toast.success("Informações atualizadas com sucesso");
       router.refresh();
     } catch (error) {
-      toast.error("Erro ao atualizar perfil");
-    }
-  }
-
-  async function onNotificationsSubmit(
-    data: z.infer<typeof notificationsFormSchema>,
-  ) {
-    try {
-      const response = await fetch("/api/user/notifications", {
-        method: "PATCH",
-        body: JSON.stringify(data),
-      });
-
-      if (!response.ok) throw new Error("Falha ao atualizar notificações");
-
-      toast.success("Preferências de notificação atualizadas!");
-    } catch (error) {
-      toast.error("Erro ao atualizar notificações");
+      toast.error("Erro ao atualizar informações");
+    } finally {
+      setIsLoading(false);
     }
   }
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Seu Perfil</CardTitle>
-            <CardDescription>
-              Gerencie suas informações pessoais e como elas são exibidas
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <UserAvatar
-                user={{ name: user.name || null, image: user.image || null }}
-                className="size-16"
-              />
-              <div>
-                <h3 className="text-lg font-medium">{user.name}</h3>
-                <p className="text-sm text-muted-foreground">{user.email}</p>
-              </div>
-            </div>
-            <Separator className="my-6" />
-            <Form {...profileForm}>
-              <form
-                onSubmit={profileForm.handleSubmit(onProfileSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={profileForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={profileForm.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit">Salvar Alterações</Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Excluir Conta</CardTitle>
-            <CardDescription>
-              Exclua permanentemente sua conta e todos os dados associados
-            </CardDescription>
-          </CardHeader>
-          <CardFooter>
-            <DeleteAccountDialog />
-          </CardFooter>
-        </Card>
-      </div>
-
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Notificações</CardTitle>
-            <CardDescription>
-              Configure como você deseja receber notificações
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...notificationsForm}>
-              <form
-                onSubmit={notificationsForm.handleSubmit(onNotificationsSubmit)}
-                className="space-y-4"
-              >
-                <FormField
-                  control={notificationsForm.control}
-                  name="emailNotifications"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Notificações por Email</FormLabel>
-                        <FormDescription>
-                          Receba atualizações sobre suas finanças por email
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={notificationsForm.control}
-                  name="marketingEmails"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Emails de Marketing</FormLabel>
-                        <FormDescription>
-                          Receba novidades e promoções do FinControl
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button type="submit">Salvar Preferências</Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Informações pessoais</CardTitle>
+        <CardDescription>
+          Atualize suas informações pessoais e dados de contato
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nome</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Seu nome" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Email</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="email"
+                      placeholder="seu@email.com"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Telefone</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="tel"
+                      placeholder="(11) 99999-9999"
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <Button type="submit" disabled={isLoading}>
+              {isLoading && (
+                <Icons.spinner className="mr-2 size-4 animate-spin" />
+              )}
+              Salvar alterações
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }
