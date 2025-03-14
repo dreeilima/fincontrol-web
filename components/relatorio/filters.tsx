@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Category } from "@prisma/client";
+import { categories } from "@prisma/client";
 import { CalendarIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ const PERIODS = [
 export function RelatorioFilters() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<categories[]>([]);
 
   // Valores dos filtros
   const period = searchParams.get("period") || "30";

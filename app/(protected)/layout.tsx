@@ -20,12 +20,17 @@ export default async function Dashboard({ children }: ProtectedLayoutProps) {
 
   if (!user) redirect("/login");
 
+  console.log("User role:", user.role); // Debug log
+
   const filteredLinks = sidebarLinks.map((section) => ({
     ...section,
-    items: section.items.filter(
-      ({ authorizeOnly }) => !authorizeOnly || authorizeOnly === user.role,
-    ),
+    items: section.items.filter((item) => {
+      if (!item.authorizeOnly) return true;
+      return item.authorizeOnly.toLowerCase() === user.role.toLowerCase(); // Comparação case-insensitive
+    }),
   }));
+
+  console.log("Filtered links:", filteredLinks); // Debug log
 
   return (
     <div className="relative flex min-h-screen w-full">

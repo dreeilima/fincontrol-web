@@ -2,7 +2,7 @@
 
 import { useCategories } from "@/contexts/categories-context";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Category } from "@prisma/client";
+import { categories } from "@prisma/client";
 import * as Icons from "lucide-react";
 import { icons } from "lucide-react";
 import { ChromePicker } from "react-color";
@@ -43,7 +43,7 @@ const formSchema = z.object({
 
 interface CategoryFormProps {
   type: "INCOME" | "EXPENSE";
-  category?: Category;
+  category?: categories;
   onSuccess?: () => void;
 }
 

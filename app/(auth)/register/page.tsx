@@ -24,7 +24,7 @@ export default function RegisterPage() {
       >
         Login
       </Link>
-      <div className="hidden h-full bg-muted lg:block" />
+      <div className="hidden h-full bg-green-500 lg:block" />
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="flex flex-col space-y-2 text-center">
@@ -36,9 +36,6 @@ export default function RegisterPage() {
             <h1 className="text-2xl font-semibold tracking-tight">
               Crie sua conta
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Insira seu e-mail abaixo para criar sua conta
-            </p>
           </div>
           <UserAuthForm type="register" />
           <p className="px-8 text-center text-sm text-muted-foreground">

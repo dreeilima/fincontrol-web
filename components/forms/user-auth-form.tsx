@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
+import { STRIPE_PLANS } from "@/lib/stripe-prices";
 import { registerSchema } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +30,14 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const selectedPlan = searchParams.get("plan");
+
+  // Redirecionar para pricing se não tiver plano selecionado
+  React.useEffect(() => {
+    if (!selectedPlan && type === "register") {
+      router.push("/pricing");
+    }
+  }, [selectedPlan, type, router]);
+
   const [isLoading, setIsLoading] = React.useState(false);
 
   const form = useForm<z.infer<typeof registerSchema>>({
@@ -45,6 +54,7 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
     setIsLoading(true);
 
     try {
+      // 1. Registra o usuário
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -52,27 +62,50 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
       });
 
       if (!response.ok) {
-        throw new Error("Erro ao criar conta");
+        const data = await response.json();
+        throw new Error(data.error || "Erro ao criar conta");
       }
 
-      toast.success("Conta criada com sucesso!");
+      const { user } = await response.json();
 
-      // Fazer login automático e esperar resultado
-      const result = await signIn("credentials", {
+      // 2. Faz login automático
+      const signInResult = await signIn("credentials", {
         email: values.email,
         password: values.password,
-        callbackUrl: selectedPlan
-          ? `/checkout?plan=${selectedPlan}`
-          : "/pricing",
-        redirect: true,
+        redirect: false,
       });
 
-      // Não precisamos mais do router.push pois o signIn já fará o redirecionamento
-    } catch (error) {
-      toast.error("Erro ao criar conta");
+      if (signInResult?.error) {
+        throw new Error("Erro ao fazer login automático");
+      }
+
+      // 3. Redireciona para o checkout do Stripe
+      const checkoutResponse = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan: selectedPlan?.toLowerCase(), // Changed from priceId to plan
+          interval: "monthly", // Add interval parameter
+        }),
+      });
+
+      const { url } = await checkoutResponse.json();
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("Erro ao criar sessão de checkout");
+      }
+    } catch (error: any) {
+      console.error("Erro no registro:", error);
+      toast.error(error.message || "Erro ao criar conta");
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Se não tiver plano selecionado, não renderiza o formulário
+  if (!selectedPlan && type === "register") {
+    return null;
   }
 
   return (

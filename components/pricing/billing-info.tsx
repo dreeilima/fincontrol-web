@@ -38,12 +38,12 @@ export function BillingInfo({ userSubscriptionPlan }: BillingInfoProps) {
       </CardHeader>
       <CardContent>{description}</CardContent>
       <CardFooter className="flex flex-col items-center space-y-2 border-t bg-accent py-2 md:flex-row md:justify-between md:space-y-0">
-        {isPaid ? (
+        {isPaid && stripeCurrentPeriodEnd ? (
           <p className="text-sm font-medium text-muted-foreground">
             {isCanceled
               ? "Seu plano será cancelado em "
               : "Seu plano renova em "}
-            {formatDate(stripeCurrentPeriodEnd)}.
+            {formatDate(stripeCurrentPeriodEnd)}
           </p>
         ) : null}
 

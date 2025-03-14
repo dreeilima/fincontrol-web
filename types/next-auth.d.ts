@@ -1,28 +1,21 @@
-import { User } from "@prisma/client";
-
-import "next-auth";
+import { User } from "next-auth";
 
 declare module "next-auth" {
   interface User {
     id: string;
-    name: string | null;
-    email: string | null;
-    phone: string | null;
+    name: string;
+    email: string;
+    role: "admin" | "user";
+    phone: string;
     stripe_customer_id: string | null;
     stripe_subscription_id: string | null;
     stripe_price_id: string | null;
     stripe_current_period_end: Date | null;
-    role: "user" | "admin";
+    image: string | null;
+    token: string;
   }
 
   interface Session {
-    user: User;
-    users: User;
-  }
-}
-
-declare module "next-auth/jwt" {
-  interface JWT {
     user: User;
   }
 }

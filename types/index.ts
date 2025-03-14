@@ -1,3 +1,7 @@
+import { UserRole } from "@prisma/client";
+
+import { Icons } from "@/components/shared/icons";
+
 export interface SubscriptionPlan {
   title: string;
   description: string;
@@ -24,13 +28,49 @@ export interface UserSubscriptionPlan extends SubscriptionPlan {
   stripeCustomerId?: string | null;
   stripeSubscriptionId?: string | null;
   stripePriceId?: string | null;
-  stripeCurrentPeriodEnd?: string | null;
+  stripeCurrentPeriodEnd?: string | number | null;
+  isPaid?: boolean | null;
+  isCanceled?: boolean | null;
 }
 
 export interface PlansRow {
   feature: string;
-  básico: string | null;
+  basico: string | null;
   pro: string | null;
   premium: string | null;
   tooltip?: string;
+}
+
+export interface NavItem {
+  title: string;
+  href?: string;
+  disabled?: boolean;
+  external?: boolean;
+  icon?: string;
+  label?: string;
+  badge?: string;
+  authorizeOnly?: UserRole;
+}
+
+export interface SidebarNavItem {
+  title: string;
+  items: NavItem[];
+}
+
+export interface InfoLdg {
+  title: string;
+  description: string;
+  image: string;
+  list: {
+    title: string;
+    description: string;
+    icon?: keyof typeof Icons;
+  }[];
+}
+
+export interface FeatureLdg {
+  title: string;
+  description: string;
+  link: string;
+  icon: keyof typeof Icons;
 }

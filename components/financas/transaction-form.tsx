@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useTransactions } from "@/contexts/transactions-context";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { BankAccount, Category, Transaction } from "@prisma/client";
+import { bank_accounts, categories, transactions } from "@prisma/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Decimal } from "decimal.js";
@@ -50,7 +50,7 @@ const formSchema = z.object({
 
 interface TransactionFormProps {
   type: "INCOME" | "EXPENSE";
-  transaction?: Transaction;
+  transaction?: transactions;
   onSuccess?: () => void;
 }
 
@@ -59,7 +59,7 @@ export function TransactionForm({
   transaction,
   onSuccess,
 }: TransactionFormProps) {
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<categories[]>([]);
   const { addTransaction, refreshTransactions, fetchTransactions } =
     useTransactions();
 
@@ -67,7 +67,7 @@ export function TransactionForm({
     fetch("/api/categories")
       .then((res) => res.json())
       .then((data) =>
-        setCategories(data.filter((c: Category) => c.type === type)),
+        setCategories(data.filter((c: categories) => c.type === type)),
       );
   }, [type]);
 

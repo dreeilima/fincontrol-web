@@ -8,7 +8,7 @@ import { stripe } from "@/lib/stripe";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -51,9 +51,9 @@ export async function GET() {
       : 0;
 
     // Buscar número de usuários pagantes
-    const paidUsers = await db.user.count({
+    const paidUsers = await db.users.count({
       where: {
-        stripePriceId: {
+        stripe_price_id: {
           not: null,
         },
       },

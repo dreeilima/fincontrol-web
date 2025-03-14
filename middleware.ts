@@ -1,48 +1,55 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { authConfig } from "@/auth.config";
-import NextAuth from "next-auth";
+import { NextRequest, NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
 
-const { auth } = NextAuth({
-  ...authConfig,
-  secret: process.env.NEXTAUTH_SECRET,
-});
+export async function middleware(request: NextRequest) {
+  // Usar exatamente o mesmo segredo que está no auth.ts
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
 
-export default auth((req) => {
-  const { nextUrl } = req;
-  const isLoggedIn = !!req.auth;
+    // Remover o salt personalizado para usar o padrão do NextAuth
+  });
 
-  const isApiAuthRoute = nextUrl.pathname.startsWith("/api/auth");
-  const isCheckoutApiRoute = nextUrl.pathname.startsWith(
-    "/api/create-checkout-session",
-  );
-  const isPublicRoute = ["/", "/login", "/register"].includes(nextUrl.pathname);
-  const isProtectedRoute = nextUrl.pathname.startsWith("/dashboard");
+  console.log("Middleware - URL:", request.nextUrl.pathname);
+  console.log("Middleware - Token exists:", !!token);
+  console.log("Middleware - Token data:", token);
 
-  // Permitir rotas de API de checkout
-  if (isCheckoutApiRoute) {
-    return NextResponse.next();
+  // Check if session cookie exists even if token is null
+  const sessionCookie = request.cookies.get("authjs.session-token");
+  console.log("Session cookie exists:", !!sessionCookie);
+
+  const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
+  const isAuthRoute =
+    request.nextUrl.pathname.startsWith("/login") ||
+    request.nextUrl.pathname.startsWith("/register");
+
+  // If no token and not auth route, redirect to login
+  if (!token && !isAuthRoute) {
+    return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  // Redirecionar usuários não autenticados para login
-  if (isProtectedRoute && !isLoggedIn) {
-    const loginUrl = new URL("/login", nextUrl);
-    loginUrl.searchParams.set("callbackUrl", nextUrl.href);
-    return NextResponse.redirect(loginUrl);
+  // If auth route and has token
+  if (isAuthRoute && token) {
+    if (token.role === "admin") {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  // Redirecionar usuários autenticados do login para dashboard
-  if (isPublicRoute && isLoggedIn) {
-    return NextResponse.redirect(new URL("/dashboard", nextUrl));
+  // If admin route and not admin
+  if (isAdminRoute && token && token.role !== "admin") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return NextResponse.next();
-});
+}
 
 export const config = {
   matcher: [
     "/dashboard/:path*",
-    "/checkout/:path*",
-    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+    "/admin/:path*",
+    "/(protected)/:path*",
+    "/login",
+    "/register",
   ],
 };

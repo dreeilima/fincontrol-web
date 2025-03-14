@@ -1,42 +1,49 @@
 import { NextResponse } from "next/server";
 import { hash } from "bcryptjs";
+import { z } from "zod";
 
 import { db } from "@/lib/db";
+import { createDefaultCategories } from "@/lib/utils/create-default-categories";
+
+const registerSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(11),
+  password: z.string().min(6),
+});
 
 export async function POST(req: Request) {
   try {
-    const { name, email, phone, password } = await req.json();
+    const body = await req.json();
 
-    // Validar campos obrigatórios
-    if (!name || !email || !phone || !password) {
-      return new NextResponse("Todos os campos são obrigatórios", {
-        status: 400,
-      });
+    // Validate request body against schema
+    const result = registerSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        { error: "Dados inválidos", details: result.error.errors },
+        { status: 400 },
+      );
     }
 
-    // Verificar se usuário já existe
-    const existingUser = await db.users.findUnique({
+    const { name, email, phone, password } = result.data;
+
+    // Verifica se email ou telefone já existem
+    const existingUser = await db.users.findFirst({
       where: {
-        email,
+        OR: [{ email }, { phone }],
       },
     });
 
     if (existingUser) {
-      return new NextResponse("Email já cadastrado", { status: 400 });
+      const errorMessage =
+        existingUser.email === email
+          ? "Email já está em uso"
+          : "Telefone já está em uso";
+
+      return NextResponse.json({ error: errorMessage }, { status: 400 });
     }
 
-    // Verificar se telefone já existe
-    const existingPhone = await db.users.findUnique({
-      where: {
-        phone,
-      },
-    });
-
-    if (existingPhone) {
-      return new NextResponse("Telefone já cadastrado", { status: 400 });
-    }
-
-    // Criar novo usuário
+    // Cria o usuário
     const hashedPassword = await hash(password, 10);
     const user = await db.users.create({
       data: {
@@ -44,13 +51,21 @@ export async function POST(req: Request) {
         email,
         phone,
         password: hashedPassword,
-        role: "USER",
       },
     });
 
-    return NextResponse.json(user);
+    // Criar categorias padrão para o novo usuário
+    await createDefaultCategories(user.id);
+
+    return NextResponse.json(
+      {
+        success: true,
+        user: { id: user.id, name: user.name, email: user.email },
+      },
+      { status: 201 },
+    );
   } catch (error) {
-    console.error("REGISTRATION_ERROR", error);
-    return new NextResponse("Erro ao criar usuário", { status: 500 });
+    console.error("[REGISTRATION_ERROR]", error);
+    return NextResponse.json({ error: "Erro ao criar conta" }, { status: 500 });
   }
 }

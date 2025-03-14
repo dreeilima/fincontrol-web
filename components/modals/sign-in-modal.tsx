@@ -107,7 +107,7 @@ export function SignInModal({ isOpen, onOpenChange }: SignInModalProps) {
       toast.success("Login realizado com sucesso!");
 
       // Redirecionar baseado no papel do usuário
-      if (userData.role === "ADMIN") {
+      if (userData.role === "admin") {
         router.push("/admin");
       } else {
         router.push("/dashboard");

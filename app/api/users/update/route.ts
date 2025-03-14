@@ -7,7 +7,7 @@ import { settingsSchema } from "@/lib/validations/settings";
 export async function PATCH(req: Request) {
   try {
     const session = await auth();
-    if (!session?.users) {
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -16,7 +16,7 @@ export async function PATCH(req: Request) {
 
     await db.users.update({
       where: {
-        id: session.users.id,
+        id: session.user.id,
       },
       data: {
         name: payload.name,

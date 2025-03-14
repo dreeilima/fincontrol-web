@@ -13,7 +13,7 @@ export async function PATCH(req: Request) {
     const body = await req.json();
     const { emailNotifications, marketingEmails } = body;
 
-    const user = await db.user.update({
+    const user = await db.users.update({
       where: {
         id: session.user.id,
       },

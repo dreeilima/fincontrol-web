@@ -2,13 +2,6 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// Comentado temporariamente para desenvolvimento web
-// generator py {
-//   provider                    = "prisma-client-py"
-//   recursive_type_depth        = "-1"
-//   enable_experimental_decimal = "true"
-// }
-
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -58,11 +51,12 @@ model categories {
   created_at   DateTime       @default(now()) @db.Timestamptz(6)
   color        String?
   icon         String?
-  updated_at   DateTime       @updatedAt @db.Timestamptz(6)
+  is_default   Boolean        @default(false)  // Add this line
+  updated_at   DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
   users        users          @relation(fields: [user_id], references: [id])
   transactions transactions[]
 
-  @@unique([user_id, name])
+  @@unique([user_id, name, type])
 }
 
 model profiles {
@@ -99,7 +93,7 @@ model transactions {
   bankAccountId String?
   categoryId    String?
   accountId     String?
-  updated_at    DateTime       @updatedAt @db.Timestamptz(6)
+  updated_at    DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
   accounts      accounts?      @relation(fields: [accountId], references: [id])
   bank_accounts bank_accounts? @relation(fields: [bankAccountId], references: [id])
   categories    categories?    @relation(fields: [categoryId], references: [id])
@@ -109,6 +103,35 @@ model transactions {
   @@index([category])
 }
 
+model subscriptions {
+  id                        String    @id @default(uuid())
+  user_id                   String    @unique
+  stripe_customer_id        String?
+  stripe_subscription_id    String?
+  stripe_price_id          String?
+  stripe_current_period_end DateTime?
+  status                   String    @default("inactive")
+  plan                     String    @default("basic")    // Adicionando plano padrão como "basic"
+  price                    Float     @default(990)        // Adicionando preço padrão como 990 (R$ 9,90)
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+  user                     users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model user_goals {
+  id                String   @id @default(uuid())
+  user_id          String   @unique
+  monthly_budget   Float    @default(0)
+  savings_goal     Float    @default(0)
+  savings_frequency String   @default("monthly")
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @updatedAt @db.Timestamptz(6)
+  user             users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+// Atualizar o modelo users para incluir a relação
 model users {
   id                        String          @id @default(uuid())
   name                      String
@@ -140,7 +163,12 @@ model users {
   profile                   profiles?
   sessions                  sessions[]
   transactions              transactions[]
+  subscription             subscriptions?   // Adicionar esta linha
+  goals                     user_goals?
 }
+
+
+
 
 model verification_tokens {
   identifier String
@@ -150,6 +178,13 @@ model verification_tokens {
   updated_at DateTime @updatedAt @db.Timestamptz(6)
 
   @@unique([identifier, token])
+}
+
+model whatsapp_auth {
+  id          String   @id @default("whatsapp")
+  credentials String
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @db.Timestamptz(6)
 }
 
 enum AccountType {

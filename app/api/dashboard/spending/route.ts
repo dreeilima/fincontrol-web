@@ -1,3 +1,4 @@
+import { type } from "os";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { endOfMonth, startOfMonth } from "date-fns";
@@ -14,11 +15,10 @@ export async function GET() {
     const startDate = startOfMonth(new Date());
     const endDate = endOfMonth(new Date());
 
-    // Buscar transações do mês atual agrupadas por categoria
-    const spending = await db.transaction.groupBy({
-      by: ["categoryName"],
+    const spending = await db.transactions.groupBy({
+      by: ["category"],
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
         type: "EXPENSE",
         date: {
           gte: startDate,
@@ -30,9 +30,13 @@ export async function GET() {
       },
     });
 
+    console.log("Dados de gastos:", spending); // Para debug
+
     return NextResponse.json(spending);
   } catch (error) {
     console.error("[DASHBOARD_SPENDING]", error);
     return new NextResponse("Erro interno", { status: 500 });
   }
 }
+
+export const runtime = "nodejs";

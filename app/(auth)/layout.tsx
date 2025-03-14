@@ -9,8 +9,11 @@ interface AuthLayoutProps {
 export default async function AuthLayout({ children }: AuthLayoutProps) {
   const user = await getCurrentUser();
 
+  // Se já estiver autenticado, redireciona baseado na role
   if (user) {
-    if (user.role === "ADMIN") redirect("/admin");
+    if (user.role === "admin") {
+      redirect("/admin");
+    }
     redirect("/dashboard");
   }
 

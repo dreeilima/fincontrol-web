@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -26,11 +26,11 @@ export async function GET() {
       topCategories,
     ] = await Promise.all([
       // Usuários ativos hoje
-      db.user.count({
+      db.users.count({
         where: {
           transactions: {
             some: {
-              createdAt: {
+              created_at: {
                 gte: startOfToday,
                 lte: endOfToday,
               },
@@ -39,11 +39,11 @@ export async function GET() {
         },
       }),
       // Usuários ativos este mês
-      db.user.count({
+      db.users.count({
         where: {
           transactions: {
             some: {
-              createdAt: {
+              created_at: {
                 gte: startOfCurrentMonth,
               },
             },
@@ -51,17 +51,17 @@ export async function GET() {
         },
       }),
       // Total de transações nos últimos 30 dias
-      db.transaction.count({
+      db.transactions.count({
         where: {
-          createdAt: {
+          created_at: {
             gte: thirtyDaysAgo,
           },
         },
       }),
       // Total de categorias
-      db.category.count(),
+      db.categories.count(),
       // Top categorias mais usadas
-      db.category.findMany({
+      db.categories.findMany({
         select: {
           name: true,
           _count: {

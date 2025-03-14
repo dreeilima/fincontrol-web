@@ -9,15 +9,15 @@ export const metadata = {
 };
 
 export default async function UsersPage() {
-  const users = await db.user
+  const users = await db.users
     .findMany({
       select: {
         id: true,
         name: true,
         email: true,
         role: true,
-        isActive: true,
-        createdAt: true,
+        is_active: true,
+        created_at: true,
         _count: {
           select: {
             transactions: true,
@@ -26,13 +26,19 @@ export default async function UsersPage() {
         },
       },
       orderBy: {
-        createdAt: "desc",
+        created_at: "desc",
       },
     })
     .then((users) =>
       users.map((user) => ({
-        ...user,
-        plan: "PRO", // Plano padrão para todos os usuários
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isActive: user.is_active,
+        createdAt: user.created_at,
+        plan: "PRO",
+        _count: user._count,
       })),
     );
 

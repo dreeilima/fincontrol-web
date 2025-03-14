@@ -15,10 +15,10 @@ export async function PATCH(
 
     const { name, type, color, icon } = await req.json();
 
-    const category = await db.category.update({
+    const category = await db.categories.update({
       where: {
         id: params.categoryId,
-        userId: session.user.id,
+        user_id: session.user.id,
       },
       data: {
         name,
@@ -46,10 +46,10 @@ export async function DELETE(
     }
 
     // Verifica se existem transações usando esta categoria
-    const transactions = await db.transaction.findFirst({
+    const transactions = await db.transactions.findFirst({
       where: {
         categoryId: params.categoryId,
-        userId: session.user.id,
+        user_id: session.user.id,
       },
     });
 
@@ -60,10 +60,10 @@ export async function DELETE(
       );
     }
 
-    await db.category.delete({
+    await db.categories.delete({
       where: {
         id: params.categoryId,
-        userId: session.user.id,
+        user_id: session.user.id,
       },
     });
 

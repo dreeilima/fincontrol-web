@@ -6,7 +6,7 @@ import { db } from "@/lib/db";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -17,14 +17,14 @@ export async function GET() {
       totalIncome,
       totalExpense,
     ] = await Promise.all([
-      db.user.count(),
-      db.transaction.count(),
-      db.category.count(),
-      db.transaction.aggregate({
+      db.users.count(),
+      db.transactions.count(),
+      db.categories.count(),
+      db.transactions.aggregate({
         where: { type: "INCOME" },
         _sum: { amount: true },
       }),
-      db.transaction.aggregate({
+      db.transactions.aggregate({
         where: { type: "EXPENSE" },
         _sum: { amount: true },
       }),

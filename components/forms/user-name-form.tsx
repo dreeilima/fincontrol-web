@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { updateUserName, type FormData } from "@/actions/update-user-name";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "@prisma/client";
+import { users } from "@prisma/client";
 import { useSession } from "next-auth/react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -16,7 +16,7 @@ import { SectionColumns } from "@/components/dashboard/section-columns";
 import { Icons } from "@/components/shared/icons";
 
 interface UserNameFormProps {
-  user: Pick<User, "id" | "name">;
+  user: Pick<users, "id" | "name">;
 }
 
 export function UserNameForm({ user }: UserNameFormProps) {

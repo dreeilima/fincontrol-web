@@ -37,21 +37,21 @@ export default function LoginPage() {
             className="mx-auto size-6"
           />
           <h1 className="text-2xl font-semibold tracking-tight">
-            Welcome back
+            Bem vindo de volta ao Fincontrol
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email to sign in to your account
+            Entre para acessar sua conta
           </p>
         </div>
         <Suspense>
-          <UserAuthForm />
+          <UserAuthForm type="login" />
         </Suspense>
         <p className="px-8 text-center text-sm text-muted-foreground">
           <Link
             href="/register"
             className="hover:text-brand underline underline-offset-4"
           >
-            Don&apos;t have an account? Sign Up
+            Não tem uma conta? Cadastre-se agora!
           </Link>
         </p>
       </div>

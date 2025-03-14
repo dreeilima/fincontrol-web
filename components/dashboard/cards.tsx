@@ -8,20 +8,20 @@ export async function DashboardCards() {
   const session = await auth();
 
   const [totalBalance, totalIncome, totalExpenses] = await Promise.all([
-    db.bankAccount.aggregate({
-      where: { userId: session?.user?.id },
+    db.bank_accounts.aggregate({
+      where: { user_id: session?.user?.id },
       _sum: { balance: true },
     }),
-    db.transaction.aggregate({
+    db.transactions.aggregate({
       where: {
-        userId: session?.user?.id,
+        user_id: session?.user?.id,
         type: "INCOME",
       },
       _sum: { amount: true },
     }),
-    db.transaction.aggregate({
+    db.transactions.aggregate({
       where: {
-        userId: session?.user?.id,
+        user_id: session?.user?.id,
         type: "EXPENSE",
       },
       _sum: { amount: true },

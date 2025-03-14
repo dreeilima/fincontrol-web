@@ -15,9 +15,9 @@ export async function GET() {
     const endDate = endOfMonth(new Date());
 
     // Buscar transações do mês atual
-    const transactions = await db.transaction.findMany({
+    const transactions = await db.transactions.findMany({
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
         date: {
           gte: startDate,
           lte: endDate,
@@ -42,9 +42,9 @@ export async function GET() {
     );
 
     // Calcular saldo total (todas as transações)
-    const allTransactions = await db.transaction.findMany({
+    const allTransactions = await db.transactions.findMany({
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
       },
     });
 

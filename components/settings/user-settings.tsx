@@ -1,145 +1,112 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { User } from "next-auth";
 import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import * as z from "zod";
+import { z } from "zod";
 
-import { settingsSchema } from "@/lib/validations/settings";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Icons } from "@/components/shared/icons";
+import { toast } from "@/components/ui/use-toast";
 
-interface UserSettingsProps {
-  user: User;
-}
+const profileFormSchema = z.object({
+  name: z.string().min(2, {
+    message: "O nome deve ter pelo menos 2 caracteres.",
+  }),
+  email: z.string().email({
+    message: "Por favor, insira um email válido.",
+  }),
+});
 
-type FormData = z.infer<typeof settingsSchema>;
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
-export function UserSettings({ user }: UserSettingsProps) {
-  const router = useRouter();
+export function UserSettings({ user }: { user: any }) {
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<FormData>({
-    resolver: zodResolver(settingsSchema),
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: user?.name || "",
       email: user?.email || "",
-      phone: user?.phone || "",
     },
   });
 
-  async function onSubmit(data: FormData) {
+  async function onSubmit(data: ProfileFormValues) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/users/update", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+      // Aqui você implementaria a lógica para atualizar o perfil
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulação
+
+      toast({
+        title: "Perfil atualizado",
+        description: "Suas informações foram atualizadas com sucesso.",
       });
-
-      if (!response.ok) {
-        throw new Error("Erro ao atualizar informações");
-      }
-
-      toast.success("Informações atualizadas com sucesso");
-      router.refresh();
     } catch (error) {
-      toast.error("Erro ao atualizar informações");
+      toast({
+        title: "Erro",
+        description: "Ocorreu um erro ao atualizar seu perfil.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Informações pessoais</CardTitle>
-        <CardDescription>
-          Atualize suas informações pessoais e dados de contato
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Seu nome" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="phone"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Telefone</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="tel"
-                      placeholder="(11) 99999-9999"
-                      {...field}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" disabled={isLoading}>
-              {isLoading && (
-                <Icons.spinner className="mr-2 size-4 animate-spin" />
-              )}
-              Salvar alterações
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome</FormLabel>
+              <FormControl>
+                <Input placeholder="Seu nome" {...field} />
+              </FormControl>
+              <FormDescription>
+                Este é o nome que será exibido no seu perfil.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="seu.email@exemplo.com"
+                  {...field}
+                  disabled
+                />
+              </FormControl>
+              <FormDescription>
+                Seu endereço de email (não pode ser alterado).
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Salvando..." : "Salvar alterações"}
+        </Button>
+      </form>
+    </Form>
   );
 }

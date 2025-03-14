@@ -14,10 +14,10 @@ export async function DELETE(
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
-    await db.transaction.delete({
+    await db.transactions.delete({
       where: {
         id: params.id,
-        userId: session.user.id,
+        user_id: session.user.id,
       },
     });
 
@@ -40,7 +40,7 @@ export async function PUT(
 
     const { amount, description, categoryId, date, type } = await req.json();
 
-    const category = await db.category.findUnique({
+    const category = await db.categories.findUnique({
       where: { id: categoryId },
       select: { name: true },
     });
@@ -49,21 +49,21 @@ export async function PUT(
       return new NextResponse("Categoria não encontrada", { status: 404 });
     }
 
-    const transaction = await db.transaction.update({
+    const transaction = await db.transactions.update({
       where: {
         id: params.id,
-        userId: session.user.id,
+        user_id: session.user.id,
       },
       data: {
         amount: new Decimal(amount),
         description,
         categoryId,
-        categoryName: category.name,
+        category: category.name,
         date: new Date(date),
         type,
       },
       include: {
-        category: true,
+        categories: true,
       },
     });
 

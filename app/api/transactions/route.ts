@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     const { amount, description, categoryId, date, type } = await req.json();
 
     // Buscar a categoria para obter o nome
-    const category = await db.category.findUnique({
+    const category = await db.categories.findUnique({
       where: { id: categoryId },
       select: { name: true },
     });
@@ -23,18 +23,19 @@ export async function POST(req: Request) {
       return new NextResponse("Categoria não encontrada", { status: 404 });
     }
 
-    const transaction = await db.transaction.create({
+    const transaction = await db.transactions.create({
       data: {
+        id: crypto.randomUUID(),
         amount: new Decimal(amount),
         description,
         categoryId,
-        categoryName: category.name,
+        category: category.name,
         date: new Date(date),
         type,
-        userId: session.user.id,
+        user_id: session.user.id,
       },
       include: {
-        category: true,
+        categories: true,
       },
     });
 
@@ -56,9 +57,9 @@ export async function GET(req: Request) {
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
-    const transactions = await db.transaction.findMany({
+    const transactions = await db.transactions.findMany({
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
         ...(startDate && endDate
           ? {
               date: {
@@ -69,7 +70,7 @@ export async function GET(req: Request) {
           : {}),
       },
       include: {
-        category: true,
+        categories: true,
       },
       orderBy: {
         date: "desc",

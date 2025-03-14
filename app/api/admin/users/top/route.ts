@@ -6,18 +6,18 @@ import { db } from "@/lib/db";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
-    const topUsers = await db.user.findMany({
+    const topUsers = await db.users.findMany({
       select: {
         id: true,
         name: true,
         email: true,
         transactions: {
           select: {
-            createdAt: true,
+            created_at: true,
             amount: true,
           },
         },
@@ -40,7 +40,7 @@ export async function GET() {
           (sum, t) => sum + (t.amount.toNumber() || 0),
           0,
         ),
-        lastActivity: user.transactions[0]?.createdAt,
+        lastActivity: user.transactions[0]?.created_at,
       })),
     );
   } catch (error) {

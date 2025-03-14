@@ -7,7 +7,7 @@ import { db } from "@/lib/db";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -25,38 +25,38 @@ export async function GET() {
       activeUsers,
     ] = await Promise.all([
       // Total de usuários
-      db.user.count(),
+      db.users.count(),
       // Novos usuários este mês
-      db.user.count({
+      db.users.count({
         where: {
-          createdAt: {
+          created_at: {
             gte: startOfCurrentMonth,
           },
         },
       }),
       // Usuários do mês passado
-      db.user.count({
+      db.users.count({
         where: {
-          createdAt: {
+          created_at: {
             gte: startOfLastMonth,
             lt: startOfCurrentMonth,
           },
         },
       }),
       // Usuários pagantes
-      db.user.count({
+      db.users.count({
         where: {
-          stripePriceId: {
+          stripe_price_id: {
             not: null,
           },
         },
       }),
       // Usuários ativos (com transações nos últimos 30 dias)
-      db.user.count({
+      db.users.count({
         where: {
           transactions: {
             some: {
-              createdAt: {
+              created_at: {
                 gte: subMonths(new Date(), 1),
               },
             },

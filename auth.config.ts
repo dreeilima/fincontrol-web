@@ -25,10 +25,12 @@ export const authConfig = {
           email: user.email,
           role: user.role === "ADMIN" ? "admin" : "user",
           phone: user.phone,
-          stripe_customer_id: user.stripe_customer_id,
-          stripe_subscription_id: user.stripe_subscription_id,
-          stripe_price_id: user.stripe_price_id,
-          stripe_current_period_end: user.stripe_current_period_end,
+          stripe_customer_id: user.stripe_customer_id ?? null,
+          stripe_subscription_id: user.stripe_subscription_id ?? null,
+          stripe_price_id: user.stripe_price_id ?? null,
+          stripe_current_period_end: user.stripe_current_period_end ?? null,
+          image: null,
+          token: user.id, // Added token field to match User interface
         };
       },
     }),

@@ -2,23 +2,53 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import NextAuth from "next-auth";
 import type { DefaultSession, NextAuthConfig } from "next-auth";
+import { JWT } from "next-auth/jwt";
 import CredentialsProvider from "next-auth/providers/credentials";
 
 import { authSchema } from "@/lib/validations/auth";
 
 import { db } from "./db.config";
 
+type UserRole = "admin" | "user";
+
 declare module "next-auth" {
   interface Session {
-    user: DefaultSession["user"] & {
+    user: {
       id: string;
-      role: "admin" | "user";
+      name: string;
+      email: string;
+      image?: string | null;
+      role: UserRole;
       phone: string | null;
       stripe_customer_id: string | null;
       stripe_subscription_id: string | null;
       stripe_price_id: string | null;
       stripe_current_period_end: Date | null;
     };
+  }
+
+  interface User {
+    id?: string;
+
+    image?: string | null;
+    role: UserRole;
+    phone: string | null;
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+    stripe_price_id: string | null;
+    stripe_current_period_end: Date | null;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT extends DefaultSession {
+    id: string;
+    role: UserRole;
+    phone: string | null;
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+    stripe_price_id: string | null;
+    stripe_current_period_end: Date | null;
   }
 }
 
@@ -40,50 +70,51 @@ export const config = {
           stripe_subscription_id: user.stripe_subscription_id,
           stripe_price_id: user.stripe_price_id,
           stripe_current_period_end: user.stripe_current_period_end,
+          image: null,
         };
       },
     }),
   ],
   callbacks: {
-    jwt: ({ token, user }) => {
+    async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.phone = user.phone;
-        token.stripe_customer_id = user.stripe_customer_id;
-        token.stripe_subscription_id = user.stripe_subscription_id;
-        token.stripe_price_id = user.stripe_price_id;
-        token.stripe_current_period_end = user.stripe_current_period_end;
+        return {
+          ...token,
+          id: user.id,
+          role: user.role,
+          phone: user.phone,
+          stripe_customer_id: user.stripe_customer_id,
+          stripe_subscription_id: user.stripe_subscription_id,
+          stripe_price_id: user.stripe_price_id,
+          stripe_current_period_end: user.stripe_current_period_end,
+        };
       }
       return token;
     },
-    session: ({ session, token }) => {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as "admin" | "user";
-        session.user.phone = token.phone as string | null;
-        session.user.stripe_customer_id = token.stripe_customer_id as
-          | string
-          | null;
-        session.user.stripe_subscription_id = token.stripe_subscription_id as
-          | string
-          | null;
-        session.user.stripe_price_id = token.stripe_price_id as string | null;
-        session.user.stripe_current_period_end =
-          token.stripe_current_period_end as Date | null;
-      }
-      return session;
+    async session({ session, token }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id,
+          role: token.role,
+          phone: token.phone,
+          stripe_customer_id: token.stripe_customer_id,
+          stripe_subscription_id: token.stripe_subscription_id,
+          stripe_price_id: token.stripe_price_id,
+          stripe_current_period_end: token.stripe_current_period_end,
+        },
+      };
     },
   },
   pages: {
     signIn: "/login",
   },
-  adapter: PrismaAdapter(db) as any,
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
 } satisfies NextAuthConfig;
 
-export const { auth, signIn, signOut } = NextAuth(config);
+export const { auth, signIn, signOut } = NextAuth(config as any);
 
 export const getServerSession = async () => {
   const session = await auth();

@@ -11,21 +11,21 @@ export async function DELETE() {
     }
 
     // Excluir todas as transações do usuário
-    await db.transaction.deleteMany({
+    await db.transactions.deleteMany({
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
       },
     });
 
     // Excluir todas as categorias do usuário
-    await db.category.deleteMany({
+    await db.categories.deleteMany({
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
       },
     });
 
     // Excluir o usuário
-    await db.user.delete({
+    await db.users.delete({
       where: {
         id: session.user.id,
       },

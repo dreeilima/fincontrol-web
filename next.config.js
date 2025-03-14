@@ -24,14 +24,29 @@ const nextConfig = {
   },
   experimental: {
     serverComponentsExternalPackages: ["@prisma/client"],
+    // Adicionar opção para melhorar compatibilidade com Prisma
+    serverActions: {
+      bodySizeLimit: "2mb",
+    },
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      return config;
+    }
+
+    // Evitar que o Prisma seja incluído no bundle do cliente
     config.resolve.fallback = {
+      ...config.resolve.fallback,
+      child_process: false,
       fs: false,
       net: false,
       tls: false,
-      crypto: false,
+      dns: false,
+      tty: false,
+      os: false,
+      path: false,
     };
+
     return config;
   },
 };

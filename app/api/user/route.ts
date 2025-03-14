@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 
 export const DELETE = auth(async (req) => {
   if (!req.auth) {
@@ -13,7 +13,7 @@ export const DELETE = auth(async (req) => {
   }
 
   try {
-    await prisma.user.delete({
+    await prisma.users.delete({
       where: {
         id: currentUser.id,
       },

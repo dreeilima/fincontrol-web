@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTransactions } from "@/contexts/transactions-context";
-import { Transaction } from "@prisma/client";
+import { transactions } from "@prisma/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
@@ -41,7 +41,7 @@ export function TransactionsList() {
   const { transactions, refreshTransactions } = useTransactions();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingTransaction, setEditingTransaction] =
-    useState<Transaction | null>(null);
+    useState<transactions | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -123,13 +123,13 @@ export function TransactionsList() {
             <div className="flex items-center gap-4">
               <div className="flex size-12 items-center justify-center rounded-full bg-muted">
                 <DynamicIcon
-                  name={transaction.category?.icon ?? null}
+                  name={transaction.categories?.icon ?? null}
                   size={24}
                 />
               </div>
               <div>
                 <p className="font-medium">
-                  {transaction.description || transaction.categoryName}
+                  {transaction.description || transaction.categories?.name}
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {format(new Date(transaction.date), "PPP", { locale: ptBR })}
@@ -150,7 +150,7 @@ export function TransactionsList() {
                   {formatCurrency(Number(transaction.amount))}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {transaction.category?.name}
+                  {transaction.categories?.name}
                 </p>
               </div>
               <DropdownMenu>
@@ -161,7 +161,7 @@ export function TransactionsList() {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
-                    onClick={() => setEditingTransaction(transaction)}
+                    onClick={() => setEditingTransaction(transaction as any)}
                   >
                     <Pencil className="mr-2 size-4" />
                     Editar

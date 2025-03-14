@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { Category } from "@prisma/client";
+import type { categories } from "@prisma/client"; // Update this line
 import {
   MoreHorizontalIcon,
   PencilIcon,
@@ -26,8 +26,8 @@ function CategoryCard({
   onEdit,
   onDelete,
 }: {
-  category: Category;
-  onEdit: (category: Category) => void;
+  category: categories; // Update this type
+  onEdit: (category: categories) => void; // Update this type
   onDelete: (categoryId: string) => void;
 }) {
   return (
@@ -67,8 +67,10 @@ function CategoryCard({
 }
 
 export function CategoriesList() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [categories, setCategories] = useState<categories[]>([]); // Update this type
+  const [editingCategory, setEditingCategory] = useState<categories | null>(
+    null,
+  ); // Update this type
 
   const fetchCategories = useCallback(async () => {
     const response = await fetch("/api/categories");
@@ -80,7 +82,7 @@ export function CategoriesList() {
     fetchCategories();
   }, [fetchCategories]);
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = (category: categories) => {
     setEditingCategory(category);
   };
 

@@ -23,7 +23,7 @@ export const sidebarLinks: SidebarNavItem[] = [
         href: "/dashboard",
         icon: "dashboard",
         title: "Dashboard",
-        authorizeOnly: UserRole.USER,
+        authorizeOnly: UserRole.USER, // Usando o enum do Prisma
       },
       {
         href: "/dashboard/financas",
@@ -44,7 +44,7 @@ export const sidebarLinks: SidebarNavItem[] = [
         authorizeOnly: UserRole.ADMIN,
       },
       {
-        href: "/dashboard/assinatura",
+        href: "/dashboard/assinatura", // Este caminho está correto
         icon: "billing",
         title: "Assinatura",
         authorizeOnly: UserRole.USER,
@@ -55,7 +55,7 @@ export const sidebarLinks: SidebarNavItem[] = [
     title: "OPÇÕES",
     items: [
       {
-        href: "/dashboard/configuracao",
+        href: "/dashboard/configuracao", // Este caminho está correto
         icon: "settings",
         title: "Configurações",
         authorizeOnly: UserRole.USER,

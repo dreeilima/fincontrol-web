@@ -1,11 +1,12 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState } from "react";
-import { BankAccount, Category, Transaction } from "@prisma/client";
+import { bank_accounts, categories, transactions } from "@prisma/client";
 
-interface TransactionWithRelations extends Transaction {
-  category: Category | null;
-  bankAccount: BankAccount | null;
+interface TransactionWithRelations
+  extends Omit<transactions, "category" | "bankAccount"> {
+  categories: categories | null;
+  bank_accounts: bank_accounts | null;
 }
 
 interface TransactionsContextType {

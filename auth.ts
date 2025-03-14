@@ -20,3 +20,5 @@ export const {
   secret: process.env.NEXTAUTH_SECRET,
   ...authConfig,
 });
+
+// This line is redundant since these exports are already declared above

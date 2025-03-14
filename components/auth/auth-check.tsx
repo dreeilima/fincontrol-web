@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 
 export async function AuthCheck() {
   const session = await auth();
-  if (!session?.users) {
+  if (!session?.user) {
     redirect("/login");
   }
   return null;

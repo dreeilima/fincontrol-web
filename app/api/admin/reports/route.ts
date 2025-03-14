@@ -8,7 +8,7 @@ import { stripe } from "@/lib/stripe";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -43,11 +43,11 @@ export async function GET() {
             ),
 
           // Custos (transações do tipo EXPENSE)
-          db.transaction
+          db.transactions
             .aggregate({
               where: {
                 type: "EXPENSE",
-                createdAt: {
+                created_at: {
                   gte: startDate,
                   lt: endDate,
                 },
@@ -59,9 +59,9 @@ export async function GET() {
             .then((result) => Number(result._sum.amount || 0)),
 
           // Novos usuários
-          db.user.count({
+          db.users.count({
             where: {
-              createdAt: {
+              created_at: {
                 gte: startDate,
                 lt: endDate,
               },
@@ -69,13 +69,13 @@ export async function GET() {
           }),
 
           // Taxa de conversão (usuários que fizeram upgrade para plano pago)
-          db.user
+          db.users
             .count({
               where: {
-                stripePriceId: {
+                stripe_price_id: {
                   not: null,
                 },
-                createdAt: {
+                created_at: {
                   gte: startDate,
                   lt: endDate,
                 },

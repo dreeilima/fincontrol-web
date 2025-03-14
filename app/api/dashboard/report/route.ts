@@ -21,9 +21,9 @@ export async function GET(req: Request) {
     const startDate = startOfDay(subDays(endDate, Number(period)));
 
     // Buscar transações do período
-    const transactions = await db.transaction.findMany({
+    const transactions = await db.transactions.findMany({
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
         date: {
           gte: startDate,
           lte: endDate,
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
         ...(categoryId ? { categoryId } : {}),
       },
       include: {
-        category: true,
+        categories: true,
       },
       orderBy: {
         date: "desc",
@@ -53,10 +53,10 @@ export async function GET(req: Request) {
     );
 
     // Agrupar por categoria para gráficos
-    const spendingByCategory = await db.transaction.groupBy({
-      by: ["categoryName"],
+    const spendingByCategory = await db.transactions.groupBy({
+      by: ["category"],
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
         type: "EXPENSE",
         date: {
           gte: startDate,
@@ -69,10 +69,10 @@ export async function GET(req: Request) {
     });
 
     // Calcular evolução diária
-    const dailyBalance = await db.transaction.groupBy({
+    const dailyBalance = await db.transactions.groupBy({
       by: ["date"],
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
         date: {
           gte: startDate,
           lte: endDate,

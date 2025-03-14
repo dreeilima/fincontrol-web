@@ -1,6 +1,6 @@
 "use client";
 
-import { Category } from "@prisma/client";
+import { categories } from "@prisma/client";
 import { PlusIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import { CategoryForm } from "./category-form";
 
 interface CategoryDialogProps {
   type: "INCOME" | "EXPENSE";
-  category?: Category;
+  category?: categories;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   onSuccess?: () => void;

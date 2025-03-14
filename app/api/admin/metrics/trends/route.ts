@@ -8,7 +8,7 @@ import { stripe } from "@/lib/stripe";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -26,18 +26,18 @@ export async function GET() {
       days.map(async ({ date, start, end }) => {
         const [users, transactions, subscriptions] = await Promise.all([
           // Novos usuários por dia
-          db.user.count({
+          db.users.count({
             where: {
-              createdAt: {
+              created_at: {
                 gte: start,
                 lte: end,
               },
             },
           }),
           // Transações por dia
-          db.transaction.count({
+          db.transactions.count({
             where: {
-              createdAt: {
+              created_at: {
                 gte: start,
                 lte: end,
               },

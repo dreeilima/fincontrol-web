@@ -6,13 +6,13 @@ import { db } from "@/lib/db";
 export async function GET() {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
-    const categories = await db.category.findMany({
+    const categories = await db.categories.findMany({
       where: {
-        userId: session.user.id,
+        user_id: session.user.id,
       },
       select: {
         id: true,
@@ -41,20 +41,21 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
     const { name, type, color, icon } = await req.json();
 
-    const category = await db.category.create({
+    const category = await db.categories.create({
       data: {
+        id: crypto.randomUUID(),
         name,
         type,
         color,
         icon,
-        userId: session.user.id,
-        isDefault: true, // Marca como categoria padrão
+        user_id: session.user.id,
+        is_default: true, // Updated to match schema field name
       },
     });
 

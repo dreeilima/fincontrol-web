@@ -14,7 +14,7 @@ export async function GET(req: Request) {
       searchParams.get("month") || (new Date().getMonth() + 1).toString();
 
     const session = await auth();
-    if (!session?.user || session.user.role !== "ADMIN") {
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -57,9 +57,9 @@ export async function GET(req: Request) {
       // Dados de usuários ativos dos últimos 6 meses
       Promise.all(
         months.map(({ startDate, endDate }) =>
-          db.user.count({
+          db.users.count({
             where: {
-              createdAt: {
+              created_at: {
                 gte: startDate,
                 lt: endDate,
               },
@@ -71,15 +71,15 @@ export async function GET(req: Request) {
       // Distribuição atual dos planos
       Promise.all([
         // Usuários no plano Basic
-        db.user.count({
+        db.users.count({
           where: {
-            stripePriceId: process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PLAN_ID,
+            stripe_price_id: process.env.NEXT_PUBLIC_STRIPE_PRO_MONTHLY_PLAN_ID,
           },
         }),
         // Usuários no plano Pro
-        db.user.count({
+        db.users.count({
           where: {
-            stripePriceId:
+            stripe_price_id:
               process.env.NEXT_PUBLIC_STRIPE_BUSINESS_MONTHLY_PLAN_ID,
           },
         }),

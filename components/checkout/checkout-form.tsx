@@ -1,68 +1,93 @@
 "use client";
 
-import { useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Session } from "next-auth";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { CardElement, useElements, useStripe } from "@stripe/react-stripe-js";
 import { toast } from "sonner";
 
-import { pricingData } from "@/config/subscriptions";
+import { Button } from "@/components/ui/button";
+import { Icons } from "@/components/shared/icons";
 
 interface CheckoutFormProps {
-  session: Session | null;
+  plan: {
+    id: string;
+    title: string;
+    priceId: string;
+  };
 }
 
-export function CheckoutForm({ session }: CheckoutFormProps) {
+export function CheckoutForm({ plan }: CheckoutFormProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const selectedPlan = searchParams.get("plan");
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (!selectedPlan) {
-      toast.error("Selecione um plano primeiro");
-      router.push("/pricing");
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
     }
-  }, [selectedPlan, router]);
 
-  async function onSubmit() {
+    setIsLoading(true);
+
     try {
-      const plan = pricingData.find(
-        (p) => p.title.toLowerCase() === selectedPlan?.toLowerCase(),
-      );
-
-      if (!plan) {
-        throw new Error("Plano não encontrado");
-      }
-
-      const response = await fetch("/api/create-checkout-session", {
+      // Create checkout session
+      const response = await fetch("/api/checkout", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          priceId: plan.priceId.production.monthly,
+          priceId: plan.priceId,
         }),
       });
 
-      if (!response.ok) throw new Error("Falha na requisição");
+      const { url } = await response.json();
 
-      const { sessionId } = await response.json();
-      // Redirecionar para o Stripe
-      window.location.href = `https://checkout.stripe.com/c/pay/${sessionId}`;
+      // Redirect to Stripe Checkout
+      window.location.href = url;
     } catch (error) {
-      toast.error("Erro ao processar pagamento");
-      console.error(error);
+      console.error("Error:", error);
+      toast.error("Ocorreu um erro ao processar o pagamento");
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="mb-4 text-2xl font-bold">Checkout</h1>
-      <button
-        onClick={onSubmit}
-        className="rounded bg-blue-500 px-4 py-2 text-white"
-      >
-        Pagar agora
-      </button>
-    </div>
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <div className="rounded-md border p-4">
+          <CardElement
+            options={{
+              style: {
+                base: {
+                  fontSize: "16px",
+                  color: "#32325d",
+                  "::placeholder": {
+                    color: "#aab7c4",
+                  },
+                },
+                invalid: {
+                  color: "#dc2626",
+                },
+              },
+            }}
+          />
+        </div>
+      </div>
+
+      <Button type="submit" className="w-full" disabled={!stripe || isLoading}>
+        {isLoading ? (
+          <>
+            <Icons.spinner className="mr-2 size-4 animate-spin" />
+            Processando...
+          </>
+        ) : (
+          `Assinar ${plan.title}`
+        )}
+      </Button>
+    </form>
   );
 }

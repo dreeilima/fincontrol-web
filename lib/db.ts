@@ -1,11 +1,7 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./prisma";
 
-import "server-only";
-
-declare global {
-  // eslint-disable-next-line no-var
-  var cachedPrisma: PrismaClient;
+if (!prisma) {
+  throw new Error("Falha ao iniciar Prisma client");
 }
 
-export const prisma = new PrismaClient();
 export const db = prisma;
