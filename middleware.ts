@@ -5,9 +5,8 @@ export async function middleware(request: NextRequest) {
   // Usar exatamente o mesmo segredo que está no auth.ts
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-
-    // Remover o salt personalizado para usar o padrão do NextAuth
+    secret: process.env.NEXTAUTH_SECRET || "fincontrol-secret-key",
+    salt: process.env.NEXTAUTH_SALT || "fincontrol-salt",
   });
 
   console.log("Middleware - URL:", request.nextUrl.pathname);
