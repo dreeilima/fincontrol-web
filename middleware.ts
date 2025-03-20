@@ -1,29 +1,35 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Session } from "next-auth";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
-  // Usar exatamente o mesmo segredo que está no auth.ts
+  // Get token with expanded options
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET || "fincontrol-secret-key",
     salt: process.env.NEXTAUTH_SALT || "fincontrol-salt",
+    secureCookie: process.env.NODE_ENV === "production",
   });
 
-  console.log("Middleware - URL:", request.nextUrl.pathname);
-  console.log("Middleware - Token exists:", !!token);
-  console.log("Middleware - Token data:", token);
-
-  // Check if session cookie exists even if token is null
   const sessionCookie = request.cookies.get("authjs.session-token");
-  console.log("Session cookie exists:", !!sessionCookie);
-
   const isAdminRoute = request.nextUrl.pathname.startsWith("/admin");
   const isAuthRoute =
     request.nextUrl.pathname.startsWith("/login") ||
     request.nextUrl.pathname.startsWith("/register");
+  const isOnboardingRoute = request.nextUrl.pathname.startsWith("/onboarding");
 
-  // If no token and not auth route, redirect to login
-  if (!token && !isAuthRoute) {
+  // Allow onboarding route to pass through if session cookie exists
+  if (isOnboardingRoute && sessionCookie) {
+    return NextResponse.next();
+  }
+
+  // If no token but has session cookie, try to proceed
+  if (!token && sessionCookie && !isAuthRoute) {
+    return NextResponse.next();
+  }
+
+  // If no token and no session cookie, redirect to login
+  if (!token && !sessionCookie && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 

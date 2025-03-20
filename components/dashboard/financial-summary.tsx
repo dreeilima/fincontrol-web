@@ -1,17 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTransactions } from "@/contexts/transactions-context";
 import { ArrowDownIcon, ArrowUpIcon, DollarSign, Wallet } from "lucide-react";
 
 import { formatCurrency } from "@/lib/utils";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 
 interface FinancialData {
   totalIncome: number;
@@ -21,6 +17,12 @@ interface FinancialData {
 }
 
 export function FinancialSummary() {
+  const { transactions, fetchTransactions } = useTransactions();
+
+  useEffect(() => {
+    fetchTransactions();
+  }, [fetchTransactions]);
+
   const [data, setData] = useState<FinancialData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 

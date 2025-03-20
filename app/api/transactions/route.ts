@@ -14,9 +14,16 @@ export async function POST(req: Request) {
     const { amount, description, categoryId, date, type } = await req.json();
 
     // Buscar a categoria para obter o nome
-    const category = await db.categories.findUnique({
-      where: { id: categoryId },
-      select: { name: true },
+    // Ajuste a busca da categoria para usar findFirst em vez de findUnique
+    const category = await db.categories.findFirst({
+      where: {
+        user_id: session.user.id,
+        name: categoryId,
+        type: type,
+      },
+      select: {
+        name: true,
+      },
     });
 
     if (!category) {

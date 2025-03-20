@@ -2,12 +2,18 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useTransactions } from "@/contexts/transactions-context"; // Adicionar import
 import { zodResolver } from "@hookform/resolvers/zod";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { CalendarIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 import { Transaction } from "@/types/transaction";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Form,
   FormControl,
@@ -17,6 +23,11 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -29,7 +40,9 @@ import { useToast } from "@/components/ui/use-toast";
 const formSchema = z.object({
   description: z.string().min(1, "A descrição é obrigatória"),
   amount: z.string().min(1, "O valor é obrigatório"),
-  date: z.string().min(1, "A data é obrigatória"),
+  date: z.date({
+    required_error: "A data é obrigatória",
+  }),
   type: z.enum(["INCOME", "EXPENSE"]),
   category: z.string().min(1, "A categoria é obrigatória"),
 });
@@ -46,15 +59,14 @@ export function TransactionForm({
   const { toast } = useToast();
   const router = useRouter();
   const isEditing = !!transaction;
+  const { addTransaction, refreshTransactions } = useTransactions(); // Usar o contexto
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       description: transaction?.description || "",
       amount: transaction?.amount.toString() || "",
-      date:
-        transaction?.date.split("T")[0] ||
-        new Date().toISOString().split("T")[0],
+      date: transaction?.date ? new Date(transaction.date) : new Date(),
       type: transaction?.type || "EXPENSE",
       category: transaction?.category || "",
     },
@@ -64,7 +76,7 @@ export function TransactionForm({
     if (isEditing && transaction) {
       form.setValue("description", transaction.description);
       form.setValue("amount", transaction.amount.toString());
-      form.setValue("date", transaction.date.split("T")[0]);
+      form.setValue("date", new Date(transaction.date));
       form.setValue("type", transaction.type);
       form.setValue("category", transaction.category);
     }
@@ -94,15 +106,24 @@ export function TransactionForm({
         throw new Error("Erro ao salvar transação");
       }
 
+      // Atualizar os dados globalmente
+      await refreshTransactions();
+
+      // Limpar o formulário
+      form.reset({
+        description: "",
+        amount: "",
+        date: new Date(),
+        type: "EXPENSE",
+        category: "",
+      });
+
       toast({
         title: isEditing ? "Transação atualizada" : "Transação criada",
         description: isEditing
           ? "A transação foi atualizada com sucesso"
           : "A transação foi criada com sucesso",
       });
-
-      onSuccess?.();
-      router.refresh();
     } catch (error) {
       toast({
         variant: "destructive",
@@ -152,11 +173,36 @@ export function TransactionForm({
           control={form.control}
           name="date"
           render={({ field }) => (
-            <FormItem>
+            <FormItem className="flex flex-col">
               <FormLabel>Data</FormLabel>
-              <FormControl>
-                <Input type="date" {...field} />
-              </FormControl>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground",
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP", { locale: ptBR })
+                      ) : (
+                        <span>Selecione uma data</span>
+                      )}
+                      <CalendarIcon className="ml-auto size-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}

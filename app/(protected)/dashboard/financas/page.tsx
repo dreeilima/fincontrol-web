@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Metadata } from "next";
+import { TransactionsProvider } from "@/contexts/transactions-context";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -32,94 +32,96 @@ export default function FinancasPage() {
 
   return (
     <DashboardShell>
-      <div className="flex flex-col gap-6">
-        <DashboardHeader />
+      <TransactionsProvider>
+        <div className="flex flex-col gap-6">
+          <DashboardHeader />
 
-        <Suspense fallback={<Skeleton className="h-[120px] w-full" />}>
-          <FinancialSummary />
-        </Suspense>
+          <Suspense fallback={<Skeleton className="h-[120px] w-full" />}>
+            <FinancialSummary />
+          </Suspense>
 
-        <Tabs defaultValue="transactions" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
-            <TabsTrigger value="transactions">Transações</TabsTrigger>
-            <TabsTrigger value="categories">Categorias</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="transactions" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+              <TabsTrigger value="transactions">Transações</TabsTrigger>
+              <TabsTrigger value="categories">Categorias</TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="transactions" className="mt-4 space-y-4">
-            <TransactionsFilter />
+            <TabsContent value="transactions" className="mt-4 space-y-4">
+              <TransactionsFilter />
 
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Nova Transação</CardTitle>
-                  <CardDescription>
-                    Registre uma nova receita ou despesa
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Suspense
-                    fallback={<Skeleton className="h-[200px] w-full" />}
-                  >
-                    <TransactionForm />
-                  </Suspense>
-                </CardContent>
-              </Card>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle>Nova Transação</CardTitle>
+                    <CardDescription>
+                      Registre uma nova receita ou despesa
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense
+                      fallback={<Skeleton className="h-[200px] w-full" />}
+                    >
+                      <TransactionForm />
+                    </Suspense>
+                  </CardContent>
+                </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle>Últimas Transações</CardTitle>
-                  <CardDescription>
-                    Visualize e gerencie suas transações recentes
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Suspense
-                    fallback={<Skeleton className="h-[400px] w-full" />}
-                  >
-                    <TransactionsList />
-                  </Suspense>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+                <Card className="md:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle>Últimas Transações</CardTitle>
+                    <CardDescription>
+                      Visualize e gerencie suas transações recentes
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense
+                      fallback={<Skeleton className="h-[400px] w-full" />}
+                    >
+                      <TransactionsList />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-          <TabsContent value="categories" className="mt-4 space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Nova Categoria</CardTitle>
-                  <CardDescription>
-                    Crie uma nova categoria para organizar suas finanças
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Suspense
-                    fallback={<Skeleton className="h-[200px] w-full" />}
-                  >
-                    <CategoryForm />
-                  </Suspense>
-                </CardContent>
-              </Card>
+            <TabsContent value="categories" className="mt-4 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle>Nova Categoria</CardTitle>
+                    <CardDescription>
+                      Crie uma nova categoria para organizar suas finanças
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense
+                      fallback={<Skeleton className="h-[200px] w-full" />}
+                    >
+                      <CategoryForm />
+                    </Suspense>
+                  </CardContent>
+                </Card>
 
-              <Card className="md:col-span-2">
-                <CardHeader className="pb-2">
-                  <CardTitle>Suas Categorias</CardTitle>
-                  <CardDescription>
-                    Gerencie suas categorias de receitas e despesas
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Suspense
-                    fallback={<Skeleton className="h-[400px] w-full" />}
-                  >
-                    <CategoriesList />
-                  </Suspense>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
+                <Card className="md:col-span-2">
+                  <CardHeader className="pb-2">
+                    <CardTitle>Suas Categorias</CardTitle>
+                    <CardDescription>
+                      Gerencie suas categorias de receitas e despesas
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Suspense
+                      fallback={<Skeleton className="h-[400px] w-full" />}
+                    >
+                      <CategoriesList />
+                    </Suspense>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </TransactionsProvider>
     </DashboardShell>
   );
 }

@@ -78,10 +78,11 @@ export async function POST(req: Request) {
     });
 
     // Simplificar o fluxo redirecionando diretamente para o dashboard
-    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?session_id={CHECKOUT_SESSION_ID}`;
+    // Modificar a URL de sucesso para incluir o session_id
+    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?session_id={CHECKOUT_SESSION_ID}`;
 
     const stripeSession = await stripe.checkout.sessions.create({
-      mode: "subscription" as Stripe.Checkout.SessionCreateParams.Mode,
+      mode: "subscription",
       payment_method_types: ["card"],
       customer_email: session.user.email || undefined,
       line_items: [

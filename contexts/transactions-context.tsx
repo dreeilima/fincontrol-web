@@ -1,6 +1,12 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+} from "react";
 import { bank_accounts, categories, transactions } from "@prisma/client";
 
 interface TransactionWithRelations
@@ -11,9 +17,10 @@ interface TransactionWithRelations
 
 interface TransactionsContextType {
   transactions: TransactionWithRelations[];
-  addTransaction: (transaction: TransactionWithRelations) => void;
+  addTransaction: (transaction: TransactionWithRelations) => Promise<void>;
   refreshTransactions: () => Promise<void>;
   fetchTransactions: () => Promise<void>;
+  isLoading: boolean;
 }
 
 export const TransactionsContext =
@@ -27,21 +34,45 @@ export function TransactionsProvider({
   const [transactions, setTransactions] = useState<TransactionWithRelations[]>(
     [],
   );
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Carrega as transações quando o componente é montado
+  useEffect(() => {
+    fetchTransactions();
+  }, []);
 
   const refreshTransactions = useCallback(async () => {
-    const response = await fetch("/api/transactions");
-    const data = await response.json();
-    setTransactions(data);
+    setIsLoading(true);
+    try {
+      const response = await fetch("/api/transactions");
+      const data = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error("Erro ao atualizar transações:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   const addTransaction = useCallback(
-    (transaction: TransactionWithRelations) => {
-      setTransactions((prev) => [transaction, ...prev]);
+    async (transaction: TransactionWithRelations) => {
+      try {
+        // Atualiza o estado imediatamente para feedback instantâneo
+        setTransactions((prev) => [transaction, ...prev]);
+
+        // Atualiza os dados do servidor em segundo plano
+        await refreshTransactions();
+      } catch (error) {
+        console.error("Erro ao adicionar transação:", error);
+        // Reverte a atualização local em caso de erro
+        setTransactions((prev) => prev.filter((t) => t.id !== transaction.id));
+      }
     },
-    [],
+    [refreshTransactions],
   );
 
   const fetchTransactions = useCallback(async () => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/transactions");
       if (!response.ok) throw new Error("Erro ao buscar transações");
@@ -49,6 +80,8 @@ export function TransactionsProvider({
       setTransactions(data);
     } catch (error) {
       console.error("Erro ao buscar transações:", error);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -59,6 +92,7 @@ export function TransactionsProvider({
         addTransaction,
         refreshTransactions,
         fetchTransactions,
+        isLoading,
       }}
     >
       {children}
