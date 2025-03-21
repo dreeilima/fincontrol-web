@@ -288,14 +288,18 @@ export function TransactionsList() {
         transaction={
           editingTransaction
             ? (() => {
-                console.log(
-                  "ID da transação sendo editada:",
-                  editingTransaction,
-                );
-
                 const transaction = transactions.find(
                   (t) => t.id === editingTransaction,
-                )!;
+                );
+
+                // Verificação de segurança
+                if (!transaction) {
+                  console.error(
+                    "Transação não encontrada:",
+                    editingTransaction,
+                  );
+                  return undefined;
+                }
 
                 console.log("Transação encontrada:", transaction);
 

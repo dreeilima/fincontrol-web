@@ -181,9 +181,6 @@ export function TransactionForm({
           control={form.control}
           name="date"
           render={({ field }) => {
-            console.log("Field value no render:", field.value);
-            console.log("Field value em ISO:", field.value?.toISOString());
-            console.log("Field value local:", field.value?.toString());
             return (
               <FormItem className="flex flex-col">
                 <FormLabel>Data</FormLabel>

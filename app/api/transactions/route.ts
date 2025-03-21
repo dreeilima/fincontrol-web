@@ -13,16 +13,11 @@ export async function POST(req: Request) {
 
     const { amount, description, categoryId, date, type } = await req.json();
 
-    // Buscar a categoria para obter o nome
-    // Ajuste a busca da categoria para usar findFirst em vez de findUnique
+    // Buscar a categoria pelo ID ao invés do nome
     const category = await db.categories.findFirst({
       where: {
         user_id: session.user.id,
-        name: categoryId,
-        type: type,
-      },
-      select: {
-        name: true,
+        id: categoryId, // Usar o ID ao invés do nome
       },
     });
 
@@ -36,7 +31,7 @@ export async function POST(req: Request) {
         amount: new Decimal(amount),
         description,
         categoryId,
-        category: category.name,
+        category: category.name, // Usar o nome da categoria encontrada
         date: new Date(date),
         type,
         user_id: session.user.id,
@@ -61,8 +56,17 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
+    const startDate = searchParams.get("from");
+    const endDate = searchParams.get("to");
+    const type = searchParams.get("type");
+    const categoryId = searchParams.get("category");
+
+    console.log("Filtros recebidos na API:", {
+      startDate,
+      endDate,
+      type,
+      categoryId,
+    });
 
     const transactions = await db.transactions.findMany({
       where: {
@@ -75,6 +79,8 @@ export async function GET(req: Request) {
               },
             }
           : {}),
+        ...(type ? { type } : {}),
+        ...(categoryId ? { categoryId } : {}), // Filtrar por categoryId
       },
       include: {
         categories: true,
@@ -83,6 +89,8 @@ export async function GET(req: Request) {
         date: "desc",
       },
     });
+
+    console.log("Transações encontradas:", transactions.length);
 
     return NextResponse.json(transactions);
   } catch (error) {

@@ -103,42 +103,39 @@ export function TransactionsProvider({
   }, [fetchCategories, refreshTransactions]);
 
   const filterTransactions = useCallback(
-    (filters: {
+    async (filters: {
       from?: string;
       to?: string;
       type?: string;
       category?: string;
     }) => {
-      let result = [...allTransactions];
+      try {
+        console.log("Aplicando filtros no contexto:", filters);
 
-      if (filters.from || filters.to) {
-        result = result.filter((t) => {
-          const transactionDate = new Date(t.date);
-          const fromDate = filters.from ? new Date(filters.from) : null;
-          const toDate = filters.to ? new Date(filters.to + "T23:59:59") : null;
+        const params = new URLSearchParams();
+        if (filters.from) params.set("from", filters.from);
+        if (filters.to) params.set("to", filters.to);
+        if (filters.type) params.set("type", filters.type);
+        if (filters.category) params.set("category", filters.category);
 
-          if (fromDate && toDate) {
-            return transactionDate >= fromDate && transactionDate <= toDate;
-          } else if (fromDate) {
-            return transactionDate >= fromDate;
-          } else if (toDate) {
-            return transactionDate <= toDate;
-          }
-          return true;
-        });
+        const queryString = params.toString();
+        const url = `/api/transactions${queryString ? `?${queryString}` : ""}`;
+
+        console.log("URL da requisição:", url);
+
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("Falha ao buscar transações");
+
+        const data = await response.json();
+        console.log("Transações filtradas:", data.length);
+
+        setFilteredTransactions(data);
+      } catch (error) {
+        console.error("Erro ao filtrar transações:", error);
+        throw error;
       }
-
-      if (filters.type && filters.type !== "all") {
-        result = result.filter((t) => t.type === filters.type);
-      }
-
-      if (filters.category && filters.category !== "all") {
-        result = result.filter((t) => t.category === filters.category);
-      }
-
-      setFilteredTransactions(result);
     },
-    [allTransactions],
+    [],
   );
 
   const addTransaction = useCallback(
@@ -217,7 +214,7 @@ export function TransactionsProvider({
       value={{
         transactions: filteredTransactions,
         categories,
-        filterTransactions, // Now we can include it here
+        filterTransactions,
         isLoading,
         refreshTransactions,
         addTransaction,

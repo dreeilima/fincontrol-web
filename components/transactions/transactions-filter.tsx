@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransactions } from "@/contexts/transactions-context";
 import { addDays, format } from "date-fns";
@@ -41,6 +41,12 @@ export function TransactionsFilter() {
     searchParams.get("category") || "all",
   );
 
+  // Filtra as categorias baseado no tipo selecionado
+  const filteredCategories = useMemo(() => {
+    if (type === "all") return categories;
+    return categories.filter((cat) => cat.type === type);
+  }, [categories, type]);
+
   useEffect(() => {
     // Apply filters whenever any filter value changes
     const filters = {
@@ -49,19 +55,32 @@ export function TransactionsFilter() {
       type: type !== "all" ? type : undefined,
       category: category !== "all" ? category : undefined,
     };
+
+    console.log("Aplicando filtros:", {
+      filters,
+      currentType: type,
+      currentCategory: category,
+      selectedCategory: categories.find((c) => c.id === category),
+    });
+
     filterTransactions(filters);
-  }, [date, type, category, filterTransactions]);
+  }, [date, type, category, filterTransactions, categories]);
 
-  const applyFilters = () => {
-    // Update URL only when button is clicked
-    const params = new URLSearchParams();
-    if (date?.from) params.set("from", format(date.from, "yyyy-MM-dd"));
-    if (date?.to) params.set("to", format(date.to, "yyyy-MM-dd"));
-    if (type !== "all") params.set("type", type);
-    if (category !== "all") params.set("category", category);
+  const handleFilter = useCallback(
+    (key: string, value: string) => {
+      console.log("handleFilter chamado:", { key, value });
+      const params = new URLSearchParams(searchParams);
+      if (value === "all") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
+      }
 
-    router.push(`/dashboard/financas?${params.toString()}`);
-  };
+      console.log("Novos parâmetros:", params.toString());
+      router.push(`/dashboard/financas?${params.toString()}`);
+    },
+    [searchParams, router],
+  );
 
   const clearFilters = () => {
     setDate(undefined);
@@ -125,12 +144,19 @@ export function TransactionsFilter() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Select value={type} onValueChange={setType}>
+            <Select
+              value={type}
+              onValueChange={(value) => {
+                setType(value);
+                setCategory("all"); // Reset categoria ao mudar tipo
+                handleFilter("type", value);
+              }}
+            >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Tipo de transação" />
+                <SelectValue placeholder="Filtrar por tipo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas transações</SelectItem>
+                <SelectItem value="all">Todos os tipos</SelectItem>
                 <SelectItem value="INCOME">Receitas</SelectItem>
                 <SelectItem value="EXPENSE">Despesas</SelectItem>
               </SelectContent>
@@ -138,19 +164,27 @@ export function TransactionsFilter() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Select value={category} onValueChange={setCategory}>
+            <Select
+              value={category}
+              onValueChange={(value) => {
+                console.log("Categoria selecionada:", {
+                  value,
+                  categoria: categories.find((c) => c.id === value),
+                });
+                setCategory(value);
+                handleFilter("category", value);
+              }}
+            >
               <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Categoria" />
+                <SelectValue placeholder="Filtrar por categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas categorias</SelectItem>
-                {categories
-                  .filter((cat) => type === "all" || cat.type === type)
-                  .map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
+                <SelectItem value="all">Todas as categorias</SelectItem>
+                {filteredCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -159,7 +193,11 @@ export function TransactionsFilter() {
             <Button variant="outline" onClick={clearFilters}>
               Limpar
             </Button>
-            <Button onClick={applyFilters}>
+            <Button
+              onClick={() => {
+                // Implement the filter button action
+              }}
+            >
               <FilterIcon className="mr-2 size-4" />
               Filtrar
             </Button>
