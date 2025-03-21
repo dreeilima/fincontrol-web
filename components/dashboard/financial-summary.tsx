@@ -17,30 +17,54 @@ interface FinancialData {
 }
 
 export function FinancialSummary() {
-  const { transactions, fetchTransactions } = useTransactions();
-
-  useEffect(() => {
-    fetchTransactions();
-  }, [fetchTransactions]);
-
-  const [data, setData] = useState<FinancialData | null>(null);
+  const { transactions } = useTransactions();
+  const [data, setData] = useState<FinancialData>({
+    totalIncome: 0,
+    totalExpense: 0,
+    balance: 0,
+    economyRate: 0,
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchData() {
+    if (transactions && transactions.length > 0) {
       try {
-        const response = await fetch("/api/dashboard/report?period=30");
-        const result = await response.json();
-        setData(result.metrics);
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const recentTransactions = transactions.filter(
+          (t) => new Date(t.date) >= thirtyDaysAgo,
+        );
+
+        const totalIncome = recentTransactions
+          .filter((t) => t.type === "INCOME")
+          .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        const totalExpense = recentTransactions
+          .filter((t) => t.type === "EXPENSE")
+          .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        const balance = totalIncome - totalExpense;
+        const economyRate =
+          totalIncome > 0
+            ? Math.max(0, Math.min(100, (balance / totalIncome) * 100))
+            : 0;
+
+        setData({
+          totalIncome,
+          totalExpense,
+          balance,
+          economyRate,
+        });
       } catch (error) {
-        console.error("Erro ao carregar resumo financeiro:", error);
+        console.error("Erro ao calcular métricas:", error);
       } finally {
         setIsLoading(false);
       }
+    } else {
+      setIsLoading(false);
     }
-
-    fetchData();
-  }, []);
+  }, [transactions]);
 
   if (isLoading) {
     return (

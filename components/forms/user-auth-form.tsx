@@ -4,7 +4,8 @@ import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { signIn } from "next-auth/react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
+import PhoneInput from "react-phone-input-2";
 import { toast } from "sonner";
 import * as z from "zod";
 
@@ -21,6 +22,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Icons } from "@/components/shared/icons";
+
+import "react-phone-input-2/lib/style.css";
 
 interface UserAuthFormProps {
   type: "register" | "login";
@@ -146,7 +149,58 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
             <FormItem>
               <FormLabel>Telefone</FormLabel>
               <FormControl>
-                <Input placeholder="11999999999" {...field} />
+                <Controller
+                  name="phone"
+                  control={form.control}
+                  render={({ field: { onChange, value } }) => (
+                    <PhoneInput
+                      country="br"
+                      value={value}
+                      onChange={(phone) => {
+                        // Remove todos os caracteres não numéricos e adiciona o código do país (55 para Brasil)
+                        const cleanNumber = phone.replace(/\D/g, "");
+                        // Se já começar com 55, não adiciona novamente
+                        const formattedNumber = cleanNumber.startsWith("55")
+                          ? cleanNumber
+                          : `55${cleanNumber}`;
+                        onChange(formattedNumber);
+                      }}
+                      containerClass="w-full"
+                      inputProps={{
+                        placeholder: "(11) 95353-8989",
+                      }}
+                      inputStyle={{
+                        width: "100%",
+                        height: "40px",
+                        fontSize: "14px",
+                        borderRadius: "6px",
+                        backgroundColor: "transparent",
+                      }}
+                      buttonStyle={{
+                        backgroundColor: "transparent",
+                        border: "none",
+                        borderRight: "1px solid var(--border)",
+                        borderRadius: "6px 0 0 6px",
+                      }}
+                      dropdownStyle={{
+                        backgroundColor: "var(--background)",
+                        border: "1px solid var(--border)",
+                        borderRadius: "6px",
+                      }}
+                      searchStyle={{
+                        backgroundColor: "transparent",
+                        border: "none",
+                        borderBottom: "1px solid var(--border)",
+                        margin: "0",
+                        width: "100%",
+                      }}
+                      enableSearch
+                      disableSearchIcon
+                      searchPlaceholder="Buscar país..."
+                      preferredCountries={["br"]}
+                    />
+                  )}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

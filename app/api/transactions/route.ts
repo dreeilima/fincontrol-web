@@ -90,3 +90,51 @@ export async function GET(req: Request) {
     return new NextResponse("Erro interno", { status: 500 });
   }
 }
+
+export async function PUT(req: Request) {
+  try {
+    const session = await auth();
+    if (!session?.user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+
+    const body = await req.json();
+    const { id } = body;
+
+    // Buscar a categoria para obter o nome
+    const category = await db.categories.findFirst({
+      where: {
+        user_id: session.user.id,
+        id: body.categoryId, // Usa o categoryId recebido
+      },
+    });
+
+    if (!category) {
+      return new Response("Category not found", { status: 404 });
+    }
+
+    const date = new Date(`${body.date}T03:00:00.000Z`);
+
+    const transaction = await db.transactions.update({
+      where: {
+        id,
+        user_id: session.user.id,
+      },
+      data: {
+        ...body,
+        category: category.name, // Atualiza o nome da categoria
+        categoryId: category.id, // Atualiza o ID da categoria
+        date,
+        updated_at: new Date(),
+      },
+      include: {
+        categories: true,
+      },
+    });
+
+    return new Response(JSON.stringify(transaction));
+  } catch (error) {
+    console.error("[TRANSACTION_PUT]", error);
+    return new Response("Internal Server Error", { status: 500 });
+  }
+}

@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransactions } from "@/contexts/transactions-context"; // Adicionar import
 import { zodResolver } from "@hookform/resolvers/zod";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
@@ -44,8 +44,10 @@ const formSchema = z.object({
     required_error: "A data é obrigatória",
   }),
   type: z.enum(["INCOME", "EXPENSE"]),
-  category: z.string().min(1, "A categoria é obrigatória"),
+  categoryId: z.string().min(1, "A categoria é obrigatória"),
 });
+
+type FormData = z.infer<typeof formSchema>;
 
 interface TransactionFormProps {
   onSuccess?: () => void;
@@ -58,65 +60,64 @@ export function TransactionForm({
 }: TransactionFormProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const { addTransaction, updateTransaction, categories } = useTransactions();
   const isEditing = !!transaction;
-  const { addTransaction, refreshTransactions } = useTransactions(); // Usar o contexto
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      description: transaction?.description || "",
-      amount: transaction?.amount.toString() || "",
-      date: transaction?.date ? new Date(transaction.date) : new Date(),
-      type: transaction?.type || "EXPENSE",
-      category: transaction?.category || "",
-    },
+    defaultValues: transaction
+      ? {
+          description: transaction.description,
+          amount: transaction.amount,
+          date: (() => {
+            // Cria a data usando UTC para evitar problemas de timezone
+            const [year, month, day] = transaction.date
+              .split("T")[0]
+              .split("-");
+            const date = new Date(
+              Date.UTC(
+                Number(year),
+                Number(month) - 1, // mês é 0-based
+                Number(day),
+                3, // 3 horas UTC = 00:00 Brasília
+                0,
+                0,
+              ),
+            );
+            console.log("Data ajustada:", date.toISOString());
+            return date;
+          })(),
+          type: transaction.type,
+          categoryId: transaction.categoryId,
+        }
+      : {
+          description: "",
+          amount: "",
+          date: new Date(),
+          type: "EXPENSE",
+          categoryId: "",
+        },
   });
 
-  useEffect(() => {
-    if (isEditing && transaction) {
-      form.setValue("description", transaction.description);
-      form.setValue("amount", transaction.amount.toString());
-      form.setValue("date", new Date(transaction.date));
-      form.setValue("type", transaction.type);
-      form.setValue("category", transaction.category);
-    }
-  }, [form, isEditing, transaction]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: FormData) {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
-      const endpoint =
-        isEditing && transaction
-          ? `/api/transactions/${transaction.id}`
-          : "/api/transactions";
+      const formattedData = {
+        description: values.description,
+        amount: values.amount,
+        date: values.date.toISOString(),
+        type: values.type,
+        categoryId: values.categoryId,
+      };
 
-      const method = isEditing ? "PUT" : "POST";
-
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...values,
-          amount: parseFloat(values.amount),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao salvar transação");
+      if (isEditing && transaction) {
+        await updateTransaction(transaction.id, formattedData);
+      } else {
+        await addTransaction(formattedData as any);
       }
-
-      // Atualizar os dados globalmente
-      await refreshTransactions();
-
-      // Limpar o formulário
-      form.reset({
-        description: "",
-        amount: "",
-        date: new Date(),
-        type: "EXPENSE",
-        category: "",
-      });
 
       toast({
         title: isEditing ? "Transação atualizada" : "Transação criada",
@@ -124,12 +125,19 @@ export function TransactionForm({
           ? "A transação foi atualizada com sucesso"
           : "A transação foi criada com sucesso",
       });
+
+      onSuccess?.();
     } catch (error) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Ocorreu um erro ao salvar a transação",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Ocorreu um erro ao salvar a transação",
       });
+    } finally {
+      setIsSubmitting(false);
     }
   }
 
@@ -172,40 +180,45 @@ export function TransactionForm({
         <FormField
           control={form.control}
           name="date"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Data</FormLabel>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground",
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: ptBR })
-                      ) : (
-                        <span>Selecione uma data</span>
-                      )}
-                      <CalendarIcon className="ml-auto size-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={field.onChange}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) => {
+            console.log("Field value no render:", field.value);
+            console.log("Field value em ISO:", field.value?.toISOString());
+            console.log("Field value local:", field.value?.toString());
+            return (
+              <FormItem className="flex flex-col">
+                <FormLabel>Data</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground",
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP", { locale: ptBR })
+                        ) : (
+                          <span>Selecione uma data</span>
+                        )}
+                        <CalendarIcon className="ml-auto size-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ? new Date(field.value) : undefined}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormMessage />
+              </FormItem>
+            );
+          }}
         />
 
         <FormField
@@ -214,7 +227,7 @@ export function TransactionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} value={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o tipo" />
@@ -232,7 +245,7 @@ export function TransactionForm({
 
         <FormField
           control={form.control}
-          name="category"
+          name="categoryId"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoria</FormLabel>
@@ -243,21 +256,13 @@ export function TransactionForm({
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="salario">Salário</SelectItem>
-                  <SelectItem value="investimentos">Investimentos</SelectItem>
-                  <SelectItem value="freelance">Freelance</SelectItem>
-                  <SelectItem value="outros_receita">
-                    Outros (Receita)
-                  </SelectItem>
-                  <SelectItem value="alimentacao">Alimentação</SelectItem>
-                  <SelectItem value="moradia">Moradia</SelectItem>
-                  <SelectItem value="transporte">Transporte</SelectItem>
-                  <SelectItem value="saude">Saúde</SelectItem>
-                  <SelectItem value="educacao">Educação</SelectItem>
-                  <SelectItem value="lazer">Lazer</SelectItem>
-                  <SelectItem value="outros_despesa">
-                    Outros (Despesa)
-                  </SelectItem>
+                  {categories
+                    .filter((cat) => cat.type === form.getValues("type"))
+                    .map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -265,8 +270,15 @@ export function TransactionForm({
           )}
         />
 
-        <Button type="submit">
-          {isEditing ? "Atualizar" : "Criar"} Transação
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 size-4 animate-spin" />
+              {isEditing ? "Atualizando..." : "Criando..."}
+            </>
+          ) : (
+            <>{isEditing ? "Atualizar" : "Criar"} Transação</>
+          )}
         </Button>
       </form>
     </Form>

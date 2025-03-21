@@ -84,6 +84,7 @@
     "react-email": "2.1.5",
     "react-hook-form": "^7.52.1",
     "react-hot-toast": "^2.5.2",
+    "react-phone-input-2": "^2.15.1",
     "react-textarea-autosize": "^8.5.3",
     "recharts": "^2.12.7",
     "resend": "^3.5.0",

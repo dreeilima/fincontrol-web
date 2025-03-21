@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { format } from "date-fns";
+import { useTransactions } from "@/contexts/transactions-context";
+import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { CalendarIcon, FilterIcon } from "lucide-react";
+import { DateRange } from "react-day-picker";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -26,27 +28,37 @@ import {
 export function TransactionsFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { categories, filterTransactions } = useTransactions();
 
-  const [date, setDate] = useState<Date | undefined>(undefined);
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: searchParams.get("from")
+      ? new Date(searchParams.get("from")!)
+      : undefined,
+    to: searchParams.get("to") ? new Date(searchParams.get("to")!) : undefined,
+  });
   const [type, setType] = useState<string>(searchParams.get("type") || "all");
   const [category, setCategory] = useState<string>(
     searchParams.get("category") || "all",
   );
 
+  useEffect(() => {
+    // Apply filters whenever any filter value changes
+    const filters = {
+      from: date?.from ? format(date.from, "yyyy-MM-dd") : undefined,
+      to: date?.to ? format(date.to, "yyyy-MM-dd") : undefined,
+      type: type !== "all" ? type : undefined,
+      category: category !== "all" ? category : undefined,
+    };
+    filterTransactions(filters);
+  }, [date, type, category, filterTransactions]);
+
   const applyFilters = () => {
+    // Update URL only when button is clicked
     const params = new URLSearchParams();
-
-    if (date) {
-      params.set("date", format(date, "yyyy-MM-dd"));
-    }
-
-    if (type && type !== "all") {
-      params.set("type", type);
-    }
-
-    if (category && category !== "all") {
-      params.set("category", category);
-    }
+    if (date?.from) params.set("from", format(date.from, "yyyy-MM-dd"));
+    if (date?.to) params.set("to", format(date.to, "yyyy-MM-dd"));
+    if (type !== "all") params.set("type", type);
+    if (category !== "all") params.set("category", category);
 
     router.push(`/dashboard/financas?${params.toString()}`);
   };
@@ -56,7 +68,18 @@ export function TransactionsFilter() {
     setType("all");
     setCategory("all");
     router.push("/dashboard/financas");
+    filterTransactions({}); // Clear filters in context
   };
+
+  // Apply filters on mount and when URL params change
+  useEffect(() => {
+    const filters = {
+      date: searchParams.get("date") || undefined,
+      type: searchParams.get("type") || undefined,
+      category: searchParams.get("category") || undefined,
+    };
+    filterTransactions(filters);
+  }, [searchParams, filterTransactions]);
 
   return (
     <Card>
@@ -68,22 +91,33 @@ export function TransactionsFilter() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "w-[240px] justify-start text-left font-normal",
+                    "w-[300px] justify-start text-left font-normal",
                     !date && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="mr-2 size-4" />
-                  {date
-                    ? format(date, "PPP", { locale: ptBR })
-                    : "Selecione uma data"}
+                  {date?.from ? (
+                    date.to ? (
+                      <>
+                        {format(date.from, "dd/MM/yyyy")} -{" "}
+                        {format(date.to, "dd/MM/yyyy")}
+                      </>
+                    ) : (
+                      format(date.from, "dd/MM/yyyy")
+                    )
+                  ) : (
+                    "Selecione um período"
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
-                  mode="single"
+                  initialFocus
+                  mode="range"
+                  defaultMonth={date?.from}
                   selected={date}
                   onSelect={setDate}
-                  initialFocus
+                  numberOfMonths={2}
                   locale={ptBR}
                 />
               </PopoverContent>
@@ -96,7 +130,7 @@ export function TransactionsFilter() {
                 <SelectValue placeholder="Tipo de transação" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="all">Todas transações</SelectItem>
                 <SelectItem value="INCOME">Receitas</SelectItem>
                 <SelectItem value="EXPENSE">Despesas</SelectItem>
               </SelectContent>
@@ -109,11 +143,14 @@ export function TransactionsFilter() {
                 <SelectValue placeholder="Categoria" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {/* Aqui você pode adicionar as categorias dinamicamente */}
-                <SelectItem value="salario">Salário</SelectItem>
-                <SelectItem value="alimentacao">Alimentação</SelectItem>
-                <SelectItem value="transporte">Transporte</SelectItem>
+                <SelectItem value="all">Todas categorias</SelectItem>
+                {categories
+                  .filter((cat) => type === "all" || cat.type === type)
+                  .map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { useSearchParams } from "next/navigation";
+import { useTransactions } from "@/contexts/transactions-context";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
   ArrowDownIcon,
@@ -11,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 
+import { Transaction } from "@/types/transaction";
 import { cn, formatCurrency } from "@/lib/utils";
 import {
   AlertDialog,
@@ -45,91 +48,57 @@ import { useToast } from "@/components/ui/use-toast";
 
 import { TransactionSheet } from "./transaction-sheet";
 
-interface Transaction {
-  id: string;
-  description: string;
-  amount: number;
-  date: string;
-  type: "INCOME" | "EXPENSE";
-  category: string;
-}
-
 export function TransactionsList() {
+  const { transactions, isLoading, deleteTransaction, categories } =
+    useTransactions();
   const { toast } = useToast();
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(
-    null,
-  );
-
-  useEffect(() => {
-    async function fetchTransactions() {
-      try {
-        const response = await fetch("/api/transactions", {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error("Erro ao buscar transações");
-        }
-
-        const data = await response.json();
-        setTransactions(data);
-      } catch (error) {
-        console.error("Erro ao carregar transações:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro ao carregar transações",
-          description:
-            "Ocorreu um erro ao carregar suas transações. Tente novamente mais tarde.",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchTransactions();
-  }, [toast]);
-
-  const getCategoryLabel = (category: string) => {
-    const categories: Record<string, string> = {
-      salario: "Salário",
-      investimentos: "Investimentos",
-      freelance: "Freelance",
-      outros_receita: "Outros (Receita)",
-      alimentacao: "Alimentação",
-      moradia: "Moradia",
-      transporte: "Transporte",
-      saude: "Saúde",
-      educacao: "Educação",
-      lazer: "Lazer",
-      outros_despesa: "Outros (Despesa)",
-    };
-
-    return categories[category] || category;
-  };
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<string | null>(
     null,
   );
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<string | null>(
+    null,
+  );
+
+  // Update the category label function
+  const getCategoryLabel = (categoryId: string) => {
+    const category = categories.find((cat) => cat.id === categoryId);
+    return category?.name || categoryId;
+  };
+
+  // Função para formatar a data corretamente
+  const formatTransactionDate = (dateString: string) => {
+    console.log("Data recebida para formatação:", dateString);
+
+    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+      console.log("Data já está no formato correto:", dateString);
+      return dateString;
+    }
+
+    const date = new Date(dateString);
+    const formatted = format(date, "yyyy-MM-dd");
+    console.log("Data após formatação:", {
+      original: dateString,
+      formatted: formatted,
+    });
+
+    return formatted;
+  };
 
   const handleEdit = (id: string) => {
     const transaction = transactions.find((t) => t.id === id);
-    if (transaction) {
-      setEditingTransaction(transaction.id);
-      setSheetOpen(true);
-    } else {
+    if (!transaction) {
       toast({
         variant: "destructive",
         title: "Erro ao editar transação",
         description: "Transação não encontrada.",
       });
+      return;
     }
+    setEditingTransaction(transaction.id);
+    setSheetOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
@@ -139,26 +108,13 @@ export function TransactionsList() {
 
   const confirmDelete = async () => {
     if (!transactionToDelete) return;
-
     try {
-      const response = await fetch(`/api/transactions/${transactionToDelete}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Erro ao excluir transação");
-      }
-
-      setTransactions(transactions.filter((t) => t.id !== transactionToDelete));
+      await deleteTransaction(transactionToDelete);
       toast({
         title: "Transação excluída",
         description: "A transação foi excluída com sucesso.",
       });
     } catch (error) {
-      console.error("Erro ao excluir transação:", error);
       toast({
         variant: "destructive",
         title: "Erro ao excluir transação",
@@ -246,13 +202,20 @@ export function TransactionsList() {
                       {transaction.description}
                     </div>
                   </TableCell>
+
                   <TableCell>
                     <Badge variant="outline">
                       {getCategoryLabel(transaction.category)}
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {format(new Date(transaction.date), "dd/MM/yyyy")}
+                    {(() => {
+                      // Ajusta o timezone adicionando 3 horas para compensar UTC-3
+                      const date = new Date(transaction.date);
+                      date.setHours(date.getHours() + 3);
+
+                      return format(date, "dd/MM/yyyy", { locale: ptBR });
+                    })()}
                   </TableCell>
                   <TableCell
                     className={cn(
@@ -262,7 +225,7 @@ export function TransactionsList() {
                         : "text-red-500",
                     )}
                   >
-                    {formatCurrency(transaction.amount)}
+                    {formatCurrency(Number(transaction.amount))}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -324,7 +287,30 @@ export function TransactionsList() {
         isEditing={!!editingTransaction}
         transaction={
           editingTransaction
-            ? transactions.find((t) => t.id === editingTransaction)
+            ? (() => {
+                console.log(
+                  "ID da transação sendo editada:",
+                  editingTransaction,
+                );
+
+                const transaction = transactions.find(
+                  (t) => t.id === editingTransaction,
+                )!;
+
+                console.log("Transação encontrada:", transaction);
+
+                const formattedTransaction = {
+                  ...transaction,
+                  amount: String(transaction.amount),
+                  date: transaction.date.split("T")[0],
+                  categoryId: transaction.categoryId,
+                  categories: transaction.categories,
+                };
+
+                console.log("Transação formatada:", formattedTransaction);
+
+                return formattedTransaction;
+              })()
             : undefined
         }
       />

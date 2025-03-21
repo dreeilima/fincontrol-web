@@ -2,17 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import fincontrolTrans from "@/public/_static/fincontrol-trans.png";
 
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
-import { UserAuthForm } from "@/components/forms/user-auth-form";
+import { ResetPasswordForm } from "@/components/forms/reset-password-form";
 
-export default function RegisterPage() {
-  const searchParams = useSearchParams();
-  const selectedPlan = searchParams.get("plan");
-
+export default function ResetPasswordPage() {
   return (
     <div className="container relative h-screen w-screen flex-col items-center justify-center lg:grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <Link
@@ -57,39 +53,22 @@ export default function RegisterPage() {
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
           <div className="space-y-2 text-center">
             <h2 className="text-3xl font-bold tracking-tight">
-              Crie sua conta
+              Esqueceu sua senha? 🔐
             </h2>
+            <p className="text-sm text-muted-foreground">
+              Digite seu email para receber um link de recuperação
+            </p>
           </div>
 
-          <UserAuthForm type="register" />
-
-          {selectedPlan && (
-            <div className="rounded-lg bg-muted p-3 text-center">
-              <p className="text-sm font-medium">
-                Plano selecionado:{" "}
-                <span className="font-semibold text-primary">
-                  {selectedPlan.toUpperCase()}
-                </span>
-              </p>
-            </div>
-          )}
+          <ResetPasswordForm />
 
           <p className="px-8 text-center text-sm text-muted-foreground">
-            Ao clicar em continuar, você concorda com nossos{" "}
             <Link
-              href="/terms"
+              href="/login"
               className="underline underline-offset-4 hover:text-primary"
             >
-              Termos de Serviço
-            </Link>{" "}
-            e{" "}
-            <Link
-              href="/privacy"
-              className="underline underline-offset-4 hover:text-primary"
-            >
-              Política de Privacidade
+              Voltar para o login
             </Link>
-            .
           </p>
         </div>
       </div>
