@@ -53,6 +53,22 @@ interface TransactionsContextType {
     transaction: Partial<Transaction>,
   ) => Promise<void>;
   deleteTransaction: (id: string) => Promise<void>;
+  createCategory: (category: {
+    name: string;
+    type: "INCOME" | "EXPENSE";
+    color: string;
+    icon?: string;
+  }) => Promise<void>;
+  deleteCategory: (id: string) => Promise<void>;
+  updateCategory: (
+    id: string,
+    category: {
+      name: string;
+      type: "INCOME" | "EXPENSE";
+      color: string;
+      icon?: string;
+    },
+  ) => Promise<void>;
 }
 
 const TransactionsContext = createContext<TransactionsContextType | undefined>(
@@ -205,6 +221,57 @@ export function TransactionsProvider({
     [refreshTransactions],
   );
 
+  const createCategory = useCallback(
+    async (category: {
+      name: string;
+      type: "INCOME" | "EXPENSE";
+      color: string;
+      icon?: string;
+    }) => {
+      const response = await fetch("/api/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(category),
+      });
+
+      if (!response.ok) throw new Error("Falha ao criar categoria");
+      await fetchCategories();
+    },
+    [fetchCategories],
+  );
+
+  const deleteCategory = useCallback(
+    async (id: string) => {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) throw new Error("Falha ao excluir categoria");
+      await fetchCategories();
+    },
+    [fetchCategories],
+  );
+
+  const updateCategory = useCallback(
+    async (
+      id: string,
+      category: {
+        name: string;
+        type: "INCOME" | "EXPENSE";
+        color: string;
+        icon?: string;
+      },
+    ) => {
+      const response = await fetch(`/api/categories/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(category),
+      });
+      if (!response.ok) throw new Error("Falha ao atualizar categoria");
+      await fetchCategories();
+    },
+    [fetchCategories],
+  );
+
   useEffect(() => {
     refreshTransactions();
   }, [refreshTransactions]);
@@ -220,6 +287,9 @@ export function TransactionsProvider({
         addTransaction,
         updateTransaction,
         deleteTransaction,
+        createCategory,
+        deleteCategory,
+        updateCategory,
       }}
     >
       {children}

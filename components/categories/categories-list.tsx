@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTransactions } from "@/contexts/transactions-context";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -32,72 +33,30 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { toast } from "@/components/ui/use-toast";
+
+import { CategorySheet } from "./category-sheet";
 
 interface Category {
   id: string;
   name: string;
   type: "INCOME" | "EXPENSE";
-  color: string;
+  color: string | null;
+  icon?: string | null;
 }
 
 export function CategoriesList() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { categories, isLoading, deleteCategory } = useTransactions();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<
+    Category | undefined
+  >();
 
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        // Aqui você implementaria a lógica para buscar as categorias
-        // Simulação de dados
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
-        setCategories([
-          {
-            id: "1",
-            name: "Salário",
-            type: "INCOME",
-            color: "#22c55e",
-          },
-          {
-            id: "2",
-            name: "Investimentos",
-            type: "INCOME",
-            color: "#3b82f6",
-          },
-          {
-            id: "3",
-            name: "Alimentação",
-            type: "EXPENSE",
-            color: "#ef4444",
-          },
-          {
-            id: "4",
-            name: "Moradia",
-            type: "EXPENSE",
-            color: "#f97316",
-          },
-          {
-            id: "5",
-            name: "Transporte",
-            type: "EXPENSE",
-            color: "#8b5cf6",
-          },
-        ]);
-      } catch (error) {
-        console.error("Erro ao carregar categorias:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchCategories();
-  }, []);
-
-  const handleEdit = (id: string) => {
-    // Implementar lógica para editar categoria
-    console.log(`Editar categoria ${id}`);
+  const handleEdit = (category: Category) => {
+    setEditingCategory(category);
+    setSheetOpen(true);
   };
 
   const handleDeleteClick = (id: string) => {
@@ -107,15 +66,18 @@ export function CategoriesList() {
 
   const confirmDelete = async () => {
     if (!categoryToDelete) return;
-
     try {
-      // Aqui você implementaria a lógica para excluir a categoria
-      console.log(`Excluindo categoria ${categoryToDelete}`);
-
-      // Simulação de exclusão
-      setCategories(categories.filter((c) => c.id !== categoryToDelete));
+      await deleteCategory(categoryToDelete);
+      toast({
+        title: "Categoria excluída",
+        description: "A categoria foi excluída com sucesso.",
+      });
     } catch (error) {
-      console.error("Erro ao excluir categoria:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Ocorreu um erro ao excluir a categoria.",
+      });
     } finally {
       setDeleteDialogOpen(false);
       setCategoryToDelete(null);
@@ -149,10 +111,13 @@ export function CategoriesList() {
               categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell>
-                    <div
-                      className="size-6 rounded-full"
-                      style={{ backgroundColor: category.color }}
-                    />
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="size-6 rounded-full"
+                        style={{ backgroundColor: category.color || "#6366f1" }}
+                      />
+                      {category.icon && <span>{category.icon}</span>}
+                    </div>
                   </TableCell>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell>
@@ -178,9 +143,7 @@ export function CategoriesList() {
                       <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleEdit(category.id)}
-                        >
+                        <DropdownMenuItem onClick={() => handleEdit(category)}>
                           <Pencil className="mr-2 size-4" />
                           Editar
                         </DropdownMenuItem>
@@ -222,6 +185,12 @@ export function CategoriesList() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <CategorySheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        category={editingCategory}
+      />
     </>
   );
 }
