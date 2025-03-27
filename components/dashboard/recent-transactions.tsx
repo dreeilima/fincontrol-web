@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useDateRange } from "@/contexts/date-range-context";
+import { useTransactions } from "@/contexts/transactions-context";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -30,15 +32,27 @@ interface Transaction {
 }
 
 export function RecentTransactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const { transactions } = useTransactions();
+  const { dateRange } = useDateRange();
   const [isLoading, setIsLoading] = useState(true);
+
+  const filteredTransactions = useMemo(() => {
+    return transactions
+      .filter(
+        (t) =>
+          new Date(t.date) >= dateRange.start &&
+          new Date(t.date) <= dateRange.end,
+      )
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5); // Últimas 5 transações
+  }, [transactions, dateRange]);
 
   useEffect(() => {
     async function loadTransactions() {
       try {
         const response = await fetch("/api/transactions?limit=5");
         const data = await response.json();
-        setTransactions(data);
+        // setTransactions(data);
       } catch (error) {
         console.error("Erro ao carregar transações:", error);
       } finally {
@@ -66,7 +80,7 @@ export function RecentTransactions() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {transactions.map((transaction) => (
+          {filteredTransactions.map((transaction) => (
             <TableRow key={transaction.id}>
               <TableCell>
                 {transaction.type === "INCOME" ? (
@@ -82,12 +96,14 @@ export function RecentTransactions() {
                     : "text-red-500"
                 }
               >
-                {formatCurrency(transaction.amount)}
+                {formatCurrency(Number(transaction.amount))}
               </TableCell>
               <TableCell className="hidden md:table-cell">
-                <span className="flex items-center gap-1">
-                  <TagIcon className="size-3 text-muted-foreground" />
-                  {transaction.categoryName}
+                <span className="flex items-center gap-1.5">
+                  {transaction.categories.icon}
+                  <span className="text-muted-foreground">
+                    {transaction.category}
+                  </span>
                 </span>
               </TableCell>
               <TableCell className="hidden md:table-cell">

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 export async function GET() {
   try {
     const session = await auth();
+
     if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
@@ -32,7 +33,7 @@ export async function GET() {
 
     return NextResponse.json(users);
   } catch (error) {
-    console.error("[USERS]", error);
+    console.error("[USERS_GET]", error);
     return new NextResponse("Erro interno", { status: 500 });
   }
 }

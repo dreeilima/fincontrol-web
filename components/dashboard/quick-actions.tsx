@@ -1,6 +1,7 @@
 "use client";
 
-import { PlusIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { BanknoteIcon, CreditCardIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -17,8 +18,8 @@ export function QuickActions() {
     <div className="flex flex-col gap-4">
       <Dialog>
         <DialogTrigger asChild>
-          <Button className="w-full">
-            <PlusIcon className="mr-2 size-4" />
+          <Button className="w-full bg-green-500 hover:bg-green-600">
+            <BanknoteIcon className="mr-2 size-4" />
             Nova Receita
           </Button>
         </DialogTrigger>
@@ -33,7 +34,7 @@ export function QuickActions() {
       <Dialog>
         <DialogTrigger asChild>
           <Button variant="outline" className="w-full">
-            <PlusIcon className="mr-2 size-4" />
+            <CreditCardIcon className="mr-2 size-4" />
             Nova Despesa
           </Button>
         </DialogTrigger>

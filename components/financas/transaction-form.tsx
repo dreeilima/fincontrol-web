@@ -7,7 +7,7 @@ import { bank_accounts, categories, transactions } from "@prisma/client";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Decimal } from "decimal.js";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, Loader2 } from "lucide-react";
 import * as Icons from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -59,9 +59,9 @@ export function TransactionForm({
   transaction,
   onSuccess,
 }: TransactionFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [categories, setCategories] = useState<categories[]>([]);
-  const { addTransaction, refreshTransactions, fetchTransactions } =
-    useTransactions();
+  const { refreshTransactions } = useTransactions();
 
   useEffect(() => {
     fetch("/api/categories")
@@ -88,6 +88,7 @@ export function TransactionForm({
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
+      setIsSubmitting(true);
       const response = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -105,12 +106,14 @@ export function TransactionForm({
         type === "INCOME" ? "Receita adicionada!" : "Despesa adicionada!",
       );
 
-      await fetchTransactions();
-
+      await refreshTransactions();
+      onSuccess?.();
       form.reset();
     } catch (error) {
       console.error(error);
       toast.error("Erro ao criar transação");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -150,12 +153,7 @@ export function TransactionForm({
                       {selectedCategory && (
                         <div className="flex items-center gap-2">
                           {selectedCategory.icon && (
-                            <span className="flex size-4 items-center justify-center">
-                              <DynamicIcon
-                                name={selectedCategory.icon}
-                                size={16}
-                              />
-                            </span>
+                            <span>{selectedCategory.icon}</span>
                           )}
                           <span>{selectedCategory.name}</span>
                         </div>
@@ -167,11 +165,7 @@ export function TransactionForm({
                   {categories.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       <div className="flex items-center gap-2">
-                        {category.icon && (
-                          <span className="flex size-4 items-center justify-center">
-                            <DynamicIcon name={category.icon} size={16} />
-                          </span>
-                        )}
+                        {category.icon && <span>{category.icon}</span>}
                         <span>{category.name}</span>
                       </div>
                     </SelectItem>
@@ -239,8 +233,19 @@ export function TransactionForm({
           )}
         />
 
-        <Button type="submit" className="w-full">
-          {type === "INCOME" ? "Atualizar Receita" : "Atualizar Despesa"}
+        <Button type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 className="mr-2 size-4 animate-spin" />
+              {type === "INCOME"
+                ? "Adicionando Receita..."
+                : "Adicionando Despesa..."}
+            </>
+          ) : type === "INCOME" ? (
+            "Adicionar Receita"
+          ) : (
+            "Adicionar Despesa"
+          )}
         </Button>
       </form>
     </Form>

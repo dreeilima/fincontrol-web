@@ -3,13 +3,14 @@ import { auth } from "@/auth";
 
 import { db } from "@/lib/db";
 
-export async function PUT(
+export async function PATCH(
   req: Request,
   { params }: { params: { categoryId: string } },
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
@@ -19,20 +20,19 @@ export async function PUT(
     const category = await db.categories.update({
       where: {
         id: params.categoryId,
-        user_id: session.user.id,
+        is_default: true,
       },
       data: {
         name,
         type,
         color,
         icon,
-        updated_at: new Date(),
       },
     });
 
     return NextResponse.json(category);
   } catch (error) {
-    console.error("[CATEGORY_PUT]", error);
+    console.error("[CATEGORY_PATCH]", error);
     return new NextResponse("Erro interno", { status: 500 });
   }
 }
@@ -43,23 +43,20 @@ export async function DELETE(
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
-    // Verifica se existem transações usando esta categoria
-    const transactions = await db.transactions.findFirst({
+    const category = await db.categories.findUnique({
       where: {
-        categoryId: params.categoryId,
+        id: params.categoryId,
         user_id: session.user.id,
       },
     });
 
-    if (transactions) {
-      return new NextResponse(
-        "Não é possível excluir uma categoria que possui transações",
-        { status: 400 },
-      );
+    if (!category) {
+      return new NextResponse("Categoria não encontrada", { status: 404 });
     }
 
     await db.categories.delete({

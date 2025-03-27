@@ -41,6 +41,7 @@ export function CategorySheet({
           <CategoryForm
             category={category}
             onSuccess={() => onOpenChange(false)}
+            isSheet={true}
           />
         </div>
       </SheetContent>

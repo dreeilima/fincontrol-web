@@ -1,21 +1,23 @@
 "use client";
 
+import { useState } from "react";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
-import { ColorPicker } from "@/components/ui/color-picker";
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { IconPicker } from "@/components/ui/icon-picker";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -26,10 +28,10 @@ import {
 } from "@/components/ui/select";
 
 const formSchema = z.object({
-  name: z.string().min(1, "Nome é obrigatório"),
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
   type: z.enum(["INCOME", "EXPENSE"]),
-  color: z.string().min(1, "Cor é obrigatória"),
-  icon: z.string().min(1, "Ícone é obrigatório"),
+  color: z.string().min(4, "Selecione uma cor"),
+  icon: z.string().optional(),
 });
 
 interface DefaultCategoryFormProps {
@@ -37,6 +39,9 @@ interface DefaultCategoryFormProps {
 }
 
 export function DefaultCategoryForm({ onSuccess }: DefaultCategoryFormProps) {
+  const [isLoading, setIsLoading] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,6 +53,8 @@ export function DefaultCategoryForm({ onSuccess }: DefaultCategoryFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+
     try {
       const response = await fetch("/api/admin/categories", {
         method: "POST",
@@ -55,13 +62,15 @@ export function DefaultCategoryForm({ onSuccess }: DefaultCategoryFormProps) {
         body: JSON.stringify(values),
       });
 
-      if (!response.ok) throw new Error("Erro ao criar categoria");
+      if (!response.ok) throw new Error();
 
       toast.success("Categoria criada com sucesso!");
       form.reset();
       onSuccess?.();
     } catch (error) {
       toast.error("Erro ao criar categoria");
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -75,8 +84,29 @@ export function DefaultCategoryForm({ onSuccess }: DefaultCategoryFormProps) {
             <FormItem>
               <FormLabel>Nome</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: Alimentação" {...field} />
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-10"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  >
+                    {form.watch("icon") || "😀"}
+                  </Button>
+                  <Input placeholder="Ex: Alimentação" {...field} />
+                </div>
               </FormControl>
+              {showEmojiPicker && (
+                <div className="absolute z-50 mt-1">
+                  <Picker
+                    data={data}
+                    onEmojiSelect={(emoji: any) => {
+                      form.setValue("icon", emoji.native);
+                      setShowEmojiPicker(false);
+                    }}
+                  />
+                </div>
+              )}
               <FormMessage />
             </FormItem>
           )}
@@ -99,6 +129,9 @@ export function DefaultCategoryForm({ onSuccess }: DefaultCategoryFormProps) {
                   <SelectItem value="EXPENSE">Despesa</SelectItem>
                 </SelectContent>
               </Select>
+              <FormDescription>
+                Defina se esta categoria é para receitas ou despesas.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -111,29 +144,31 @@ export function DefaultCategoryForm({ onSuccess }: DefaultCategoryFormProps) {
             <FormItem>
               <FormLabel>Cor</FormLabel>
               <FormControl>
-                <ColorPicker value={field.value} onChange={field.onChange} />
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="color"
+                    {...field}
+                    value={field.value || "#64f296"}
+                    className="h-10 w-12 cursor-pointer p-1"
+                  />
+                  <Input
+                    type="text"
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    className="flex-1"
+                  />
+                </div>
               </FormControl>
+              <FormDescription>
+                Escolha uma cor para identificar visualmente esta categoria.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="icon"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Ícone</FormLabel>
-              <FormControl>
-                <IconPicker value={field.value} onChange={field.onChange} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <Button type="submit" className="w-full">
-          Criar Categoria
+        <Button type="submit" disabled={isLoading} className="w-full">
+          {isLoading ? "Criando..." : "Criar categoria"}
         </Button>
       </form>
     </Form>

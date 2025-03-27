@@ -1,13 +1,18 @@
 "use client";
 
 import { CategoriesProvider } from "@/contexts/categories-context";
+import { DateRangeProvider } from "@/contexts/date-range-context";
 import { TransactionsProvider } from "@/contexts/transactions-context";
 import { ptBR } from "date-fns/locale";
 import { SessionProvider } from "next-auth/react";
 import { ThemeProvider } from "next-themes";
 import { DayPickerProvider } from "react-day-picker";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+interface ProvidersProps {
+  children: React.ReactNode;
+}
+
+export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider
       attribute="class"
@@ -24,9 +29,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
             toYear: 2030,
           }}
         >
-          <TransactionsProvider>
-            <CategoriesProvider>{children}</CategoriesProvider>
-          </TransactionsProvider>
+          <DateRangeProvider>
+            <TransactionsProvider>
+              <CategoriesProvider>{children}</CategoriesProvider>
+            </TransactionsProvider>
+          </DateRangeProvider>
         </DayPickerProvider>
       </SessionProvider>
     </ThemeProvider>

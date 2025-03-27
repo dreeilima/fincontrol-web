@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { User } from "next-auth";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { toast } from "sonner";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,19 +17,46 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { Switch } from "@/components/ui/switch";
-import { toast } from "@/components/ui/use-toast";
 
 const notificationsFormSchema = z.object({
-  emailNotifications: z.boolean().default(true),
-  marketingEmails: z.boolean().default(false),
-  transactionAlerts: z.boolean().default(true),
-  budgetAlerts: z.boolean().default(true),
+  emailNotifications: z.boolean(),
+  marketingEmails: z.boolean(),
+  transactionAlerts: z.boolean(),
+  budgetAlerts: z.boolean(),
 });
 
 type NotificationsFormValues = z.infer<typeof notificationsFormSchema>;
 
-export function NotificationSettings({ user }: { user: any }) {
-  const [isLoading, setIsLoading] = useState(false);
+const NOTIFICATIONS = [
+  {
+    id: "emailNotifications",
+    label: "Notificações por Email",
+    description: "Receba emails sobre sua atividade financeira.",
+  },
+  {
+    id: "marketingEmails",
+    label: "Emails de Marketing",
+    description: "Receba emails sobre novos recursos e ofertas.",
+  },
+  {
+    id: "transactionAlerts",
+    label: "Alertas de Transações",
+    description: "Seja notificado sobre novas transações.",
+  },
+  {
+    id: "budgetAlerts",
+    label: "Alertas de Orçamento",
+    description:
+      "Seja notificado quando se aproximar dos limites de orçamento.",
+  },
+] as const;
+
+interface NotificationSettingsProps {
+  user: User;
+}
+
+export function NotificationSettings({ user }: NotificationSettingsProps) {
+  const [isPending, setIsPending] = useState(false);
 
   const form = useForm<NotificationsFormValues>({
     resolver: zodResolver(notificationsFormSchema),
@@ -40,127 +69,57 @@ export function NotificationSettings({ user }: { user: any }) {
   });
 
   async function onSubmit(data: NotificationsFormValues) {
-    setIsLoading(true);
+    setIsPending(true);
 
     try {
-      // Aqui você implementaria a lógica para atualizar as preferências
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulação
+      const response = await fetch("/api/user/notifications", {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      });
 
-      toast({
-        title: "Preferências atualizadas",
-        description: "Suas preferências de notificação foram atualizadas.",
-      });
+      if (!response.ok) throw new Error();
+
+      toast.success("Preferências atualizadas com sucesso!");
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar suas preferências.",
-        variant: "destructive",
-      });
+      toast.error("Erro ao atualizar preferências");
     } finally {
-      setIsLoading(false);
+      setIsPending(false);
     }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-4">
-          <FormField
-            control={form.control}
-            name="emailNotifications"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    Notificações por Email
-                  </FormLabel>
-                  <FormDescription>
-                    Receba emails sobre sua atividade financeira.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="marketingEmails"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    Emails de Marketing
-                  </FormLabel>
-                  <FormDescription>
-                    Receba emails sobre novos recursos e ofertas.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="transactionAlerts"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    Alertas de Transações
-                  </FormLabel>
-                  <FormDescription>
-                    Seja notificado sobre novas transações.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="budgetAlerts"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                <div className="space-y-0.5">
-                  <FormLabel className="text-base">
-                    Alertas de Orçamento
-                  </FormLabel>
-                  <FormDescription>
-                    Seja notificado quando se aproximar dos limites de
-                    orçamento.
-                  </FormDescription>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {NOTIFICATIONS.map((notification) => (
+            <FormField
+              key={notification.id}
+              control={form.control}
+              name={notification.id as keyof NotificationsFormValues}
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <FormLabel className="text-base">
+                      {notification.label}
+                    </FormLabel>
+                    <FormDescription>
+                      {notification.description}
+                    </FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          ))}
         </div>
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Salvando..." : "Salvar preferências"}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Salvando..." : "Salvar preferências"}
         </Button>
       </form>
     </Form>

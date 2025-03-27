@@ -1,4 +1,5 @@
 import { UserRole } from "@prisma/client";
+import { User as NextAuthUser } from "next-auth";
 
 import { Icons } from "@/components/shared/icons";
 
@@ -74,3 +75,5 @@ export interface FeatureLdg {
   link: string;
   icon: keyof typeof Icons;
 }
+
+export type UserWithoutToken = Omit<NextAuthUser, "token">;

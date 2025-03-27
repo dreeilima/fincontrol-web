@@ -4,7 +4,8 @@ import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTheme } from "next-themes";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { toast } from "sonner";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,7 +17,24 @@ import {
   FormLabel,
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { toast } from "@/components/ui/use-toast";
+
+const THEMES = [
+  {
+    value: "light",
+    label: "Claro",
+    description: "Tema claro para melhor visibilidade durante o dia",
+  },
+  {
+    value: "dark",
+    label: "Escuro",
+    description: "Tema escuro para reduzir o cansaço visual à noite",
+  },
+  {
+    value: "system",
+    label: "Sistema",
+    description: "Sincroniza com as preferências do seu sistema",
+  },
+] as const;
 
 const appearanceFormSchema = z.object({
   theme: z.enum(["light", "dark", "system"], {
@@ -27,7 +45,7 @@ const appearanceFormSchema = z.object({
 type AppearanceFormValues = z.infer<typeof appearanceFormSchema>;
 
 export function AppearanceSettings() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const { theme, setTheme } = useTheme();
 
   const form = useForm<AppearanceFormValues>({
@@ -38,73 +56,73 @@ export function AppearanceSettings() {
   });
 
   async function onSubmit(data: AppearanceFormValues) {
-    setIsLoading(true);
+    setIsPending(true);
 
     try {
       setTheme(data.theme);
-
-      toast({
-        title: "Aparência atualizada",
-        description: "Suas preferências de aparência foram atualizadas.",
-      });
+      toast.success("Tema atualizado com sucesso!");
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar suas preferências.",
-        variant: "destructive",
-      });
+      toast.error("Erro ao atualizar tema");
     } finally {
-      setIsLoading(false);
+      setIsPending(false);
     }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="theme"
           render={({ field }) => (
-            <FormItem className="space-y-4">
+            <FormItem>
               <FormLabel>Tema</FormLabel>
+              <FormDescription>
+                Selecione o tema de sua preferência para o FinControl.
+              </FormDescription>
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
                   defaultValue={field.value}
                   className="grid grid-cols-3 gap-4"
                 >
-                  <FormItem className="flex flex-col items-center space-y-2 rounded-lg border p-4">
-                    <FormControl>
-                      <RadioGroupItem value="light" className="sr-only" />
-                    </FormControl>
-                    <div className="size-8 rounded-full border bg-white"></div>
-                    <FormLabel className="font-normal">Claro</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex flex-col items-center space-y-2 rounded-lg border p-4">
-                    <FormControl>
-                      <RadioGroupItem value="dark" className="sr-only" />
-                    </FormControl>
-                    <div className="size-8 rounded-full border bg-slate-950"></div>
-                    <FormLabel className="font-normal">Escuro</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex flex-col items-center space-y-2 rounded-lg border p-4">
-                    <FormControl>
-                      <RadioGroupItem value="system" className="sr-only" />
-                    </FormControl>
-                    <div className="size-8 rounded-full border bg-gradient-to-r from-white to-slate-950"></div>
-                    <FormLabel className="font-normal">Sistema</FormLabel>
-                  </FormItem>
+                  {THEMES.map((theme) => (
+                    <FormItem key={theme.value}>
+                      <FormControl>
+                        <RadioGroupItem
+                          value={theme.value}
+                          className="peer sr-only"
+                        />
+                      </FormControl>
+                      <FormLabel className="flex flex-col items-center justify-between rounded-lg border p-4 hover:bg-accent peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary">
+                        <div
+                          className={`size-8 rounded-full border ${
+                            theme.value === "light"
+                              ? "bg-white"
+                              : theme.value === "dark"
+                                ? "bg-slate-950"
+                                : "bg-gradient-to-r from-white to-slate-950"
+                          }`}
+                        />
+                        <div className="mt-2 text-center">
+                          <p className="font-medium leading-none">
+                            {theme.label}
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {theme.description}
+                          </p>
+                        </div>
+                      </FormLabel>
+                    </FormItem>
+                  ))}
                 </RadioGroup>
               </FormControl>
-              <FormDescription>
-                Selecione o tema de sua preferência para o FinControl.
-              </FormDescription>
             </FormItem>
           )}
         />
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Salvando..." : "Salvar preferências"}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Salvando..." : "Salvar preferências"}
         </Button>
       </form>
     </Form>

@@ -13,8 +13,6 @@ export async function GET() {
 
     // Datas para comparação
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const firstDayOfLastMonth = new Date(
       today.getFullYear(),
@@ -30,24 +28,33 @@ export async function GET() {
     ]);
 
     // Métricas do mês anterior
-    const [lastMonthUsers, lastMonthTransactions] = await Promise.all([
-      db.users.count({
-        where: {
-          created_at: {
-            lt: firstDayOfMonth,
-            gte: firstDayOfLastMonth,
+    const [lastMonthUsers, lastMonthTransactions, lastMonthCategories] =
+      await Promise.all([
+        db.users.count({
+          where: {
+            created_at: {
+              lt: firstDayOfMonth,
+              gte: firstDayOfLastMonth,
+            },
           },
-        },
-      }),
-      db.transactions.count({
-        where: {
-          created_at: {
-            lt: firstDayOfMonth,
-            gte: firstDayOfLastMonth,
+        }),
+        db.transactions.count({
+          where: {
+            created_at: {
+              lt: firstDayOfMonth,
+              gte: firstDayOfLastMonth,
+            },
           },
-        },
-      }),
-    ]);
+        }),
+        db.categories.count({
+          where: {
+            created_at: {
+              lt: firstDayOfMonth,
+              gte: firstDayOfLastMonth,
+            },
+          },
+        }),
+      ]);
 
     // Calcula as variações percentuais
     const calculateGrowth = (current: number, previous: number) => {
@@ -56,18 +63,17 @@ export async function GET() {
     };
 
     return NextResponse.json({
-      monthlyActiveUsers: totalUsers,
-      systemUsage: {
-        totalTransactions,
-        totalCategories,
-      },
+      totalUsers,
+      totalTransactions,
+      totalCategories,
       comparisons: {
-        monthlyUsers: calculateGrowth(totalUsers, lastMonthUsers),
+        users: calculateGrowth(totalUsers, lastMonthUsers),
         transactions: calculateGrowth(totalTransactions, lastMonthTransactions),
+        categories: calculateGrowth(totalCategories, lastMonthCategories),
       },
     });
   } catch (error) {
-    console.error("[USAGE_METRICS_GET]", error);
+    console.error("[SYSTEM_METRICS_GET]", error);
     return new NextResponse("Erro interno", { status: 500 });
   }
 }

@@ -1,8 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MoreHorizontal, PlusCircle } from "lucide-react";
+import { icons, MoreHorizontal, PlusCircle, Trash2 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,6 +40,7 @@ import {
 } from "@/components/ui/table";
 
 import { DefaultCategoryForm } from "./default-category-form";
+import { EditCategoryDialog } from "./edit-category-dialog";
 import { TableSkeleton } from "./skeletons/metrics-skeleton";
 
 interface Category {
@@ -45,6 +57,8 @@ interface Category {
 export function DefaultCategories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [categoryToDelete, setCategoryToDelete] = useState<string | null>(null);
 
   const fetchCategories = async () => {
     try {
@@ -62,6 +76,26 @@ export function DefaultCategories() {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  async function handleDeleteCategory(categoryId: string) {
+    setIsDeleteLoading(true);
+
+    try {
+      const response = await fetch(`/api/admin/categories/${categoryId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error();
+
+      toast.success("Categoria excluída com sucesso");
+      fetchCategories(); // Recarrega a lista
+    } catch (error) {
+      toast.error("Erro ao excluir categoria");
+    } finally {
+      setIsDeleteLoading(false);
+      setCategoryToDelete(null);
+    }
+  }
 
   if (loading) {
     return <TableSkeleton />;
@@ -118,14 +152,7 @@ export function DefaultCategories() {
                     style={{ backgroundColor: category.color || "#000000" }}
                   />
                 </TableCell>
-                <TableCell>
-                  {category.icon && (
-                    <DynamicIcon
-                      name={category.icon}
-                      className="size-4 text-muted-foreground"
-                    />
-                  )}
-                </TableCell>
+                <TableCell>{category.icon}</TableCell>
                 <TableCell>{category._count.transactions}</TableCell>
                 <TableCell className="text-right">
                   <DropdownMenu>
@@ -136,8 +163,21 @@ export function DefaultCategories() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>Editar Categoria</DropdownMenuItem>
-                      <DropdownMenuItem className="text-red-600">
+                      <EditCategoryDialog
+                        category={{
+                          id: category.id,
+                          name: category.name,
+                          type: category.type as "INCOME" | "EXPENSE",
+                          color: category.color || "#000000",
+                          icon: category.icon || "",
+                        }}
+                        onSuccess={fetchCategories}
+                      />
+                      <DropdownMenuItem
+                        className="text-red-600"
+                        onClick={() => setCategoryToDelete(category.id)}
+                      >
+                        <Trash2 className="mr-2 size-4" />
                         Excluir Categoria
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -148,6 +188,40 @@ export function DefaultCategories() {
           </TableBody>
         </Table>
       </div>
+
+      <AlertDialog
+        open={!!categoryToDelete}
+        onOpenChange={() => setCategoryToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente
+              esta categoria e pode afetar transações relacionadas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() =>
+                categoryToDelete && handleDeleteCategory(categoryToDelete)
+              }
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleteLoading}
+            >
+              {isDeleteLoading ? (
+                <>
+                  <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  <span>Excluindo...</span>
+                </>
+              ) : (
+                "Sim, excluir categoria"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -11,5 +11,5 @@ export function DashboardDateFilter() {
     setDateRange({ start, end });
   };
 
-  return <DateNavigation onDateChange={handleDateChange} />;
+  return <DateNavigation />;
 }

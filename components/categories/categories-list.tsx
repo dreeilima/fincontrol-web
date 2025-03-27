@@ -25,6 +25,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -43,6 +44,44 @@ interface Category {
   type: "INCOME" | "EXPENSE";
   color: string | null;
   icon?: string | null;
+}
+
+function CategoriesListSkeleton() {
+  return (
+    <div className="rounded-md border">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Cor</TableHead>
+            <TableHead>Nome</TableHead>
+            <TableHead>Tipo</TableHead>
+            <TableHead className="text-right">Ações</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {Array.from({ length: 5 }).map((_, index) => (
+            <TableRow key={index}>
+              <TableCell>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="size-6 rounded-full" />
+                  <Skeleton className="size-6" />
+                </div>
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-4 w-[150px]" />
+              </TableCell>
+              <TableCell>
+                <Skeleton className="h-5 w-[100px]" />
+              </TableCell>
+              <TableCell className="text-right">
+                <Skeleton className="ml-auto size-8" />
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
 }
 
 export function CategoriesList() {
@@ -85,7 +124,7 @@ export function CategoriesList() {
   };
 
   if (isLoading) {
-    return <div>Carregando categorias...</div>;
+    return <CategoriesListSkeleton />;
   }
 
   return (
@@ -95,6 +134,7 @@ export function CategoriesList() {
           <TableHeader>
             <TableRow>
               <TableHead>Cor</TableHead>
+              <TableHead>Ícone</TableHead>
               <TableHead>Nome</TableHead>
               <TableHead>Tipo</TableHead>
               <TableHead className="text-right">Ações</TableHead>
@@ -114,10 +154,12 @@ export function CategoriesList() {
                     <div className="flex items-center gap-2">
                       <div
                         className="size-6 rounded-full"
-                        style={{ backgroundColor: category.color || "#6366f1" }}
+                        style={{ backgroundColor: category.color || "#64f296" }}
                       />
-                      {category.icon && <span>{category.icon}</span>}
                     </div>
+                  </TableCell>
+                  <TableCell className="size-6">
+                    {category.icon && <span>{category.icon}</span>}
                   </TableCell>
                   <TableCell className="font-medium">{category.name}</TableCell>
                   <TableCell>

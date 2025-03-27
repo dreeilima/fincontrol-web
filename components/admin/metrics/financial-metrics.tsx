@@ -5,6 +5,7 @@ import { DollarSign, TrendingDown, TrendingUp } from "lucide-react";
 
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ComparisonIndicator from "@/components/ui/comparison-indicator";
 
 import { MetricsGridSkeleton } from "../skeletons/metrics-skeleton";
 
@@ -14,6 +15,13 @@ interface FinancialMetrics {
   churnRate: number;
   mrrGrowthRate: number;
   totalRevenue: number;
+  volume: number;
+  comparisons: {
+    mrr: number;
+    revenue: number;
+    volume: number;
+    churn: number;
+  };
 }
 
 export function FinancialMetrics() {
@@ -24,7 +32,7 @@ export function FinancialMetrics() {
     async function fetchMetrics() {
       try {
         const response = await fetch("/api/admin/metrics/financial");
-        if (!response.ok) throw new Error("Falha ao carregar métricas");
+        if (!response.ok) throw new Error();
         const data = await response.json();
         setMetrics(data);
       } catch (error) {
@@ -52,10 +60,10 @@ export function FinancialMetrics() {
           <div className="text-2xl font-bold">
             {formatCurrency(metrics.monthlyRecurringRevenue)}
           </div>
-          <p className="text-xs text-muted-foreground">
-            {metrics.mrrGrowthRate > 0 ? "+" : ""}
-            {metrics.mrrGrowthRate}% em relação ao mês anterior
-          </p>
+          <ComparisonIndicator
+            value={metrics.comparisons.mrr}
+            label="vs. mês anterior"
+          />
         </CardContent>
       </Card>
 
@@ -70,9 +78,10 @@ export function FinancialMetrics() {
           <div className="text-2xl font-bold">
             {formatCurrency(metrics.averageRevenuePerUser)}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Média mensal por usuário
-          </p>
+          <ComparisonIndicator
+            value={metrics.comparisons.revenue}
+            label="vs. mês anterior"
+          />
         </CardContent>
       </Card>
 
@@ -85,7 +94,25 @@ export function FinancialMetrics() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{metrics.churnRate}%</div>
-          <p className="text-xs text-muted-foreground">Cancelamentos mensais</p>
+          <ComparisonIndicator
+            value={metrics.comparisons.churn}
+            label="vs. mês anterior"
+          />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Volume Total</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold">
+            {formatCurrency(metrics.volume)}
+          </div>
+          <ComparisonIndicator
+            value={metrics.comparisons.volume}
+            label="vs. mês anterior"
+          />
         </CardContent>
       </Card>
     </div>

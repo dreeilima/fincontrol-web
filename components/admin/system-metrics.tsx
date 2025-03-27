@@ -1,36 +1,33 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  FolderTree,
-  Receipt,
-  TrendingDown,
-  TrendingUp,
-  Users,
-} from "lucide-react";
+import { FolderTree, Receipt, Users } from "lucide-react";
 
-import { formatCurrency } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { MetricsGridSkeleton } from "./skeletons/metrics-skeleton";
 
-interface Metrics {
-  users: number;
-  transactions: number;
-  categories: number;
-  income: number;
-  expense: number;
+interface SystemMetricsData {
+  totalUsers: number;
+  totalTransactions: number;
+  totalCategories: number;
+  comparisons: {
+    users: number;
+    transactions: number;
+    categories: number;
+  };
 }
 
 export function SystemMetrics() {
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const [metrics, setMetrics] = useState<SystemMetricsData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchMetrics() {
       try {
-        const response = await fetch("/api/admin/metrics");
-        if (!response.ok) throw new Error("Falha ao carregar métricas");
+        const response = await fetch("/api/admin/system-metrics");
+        if (!response.ok) throw new Error();
         const data = await response.json();
         setMetrics(data);
       } catch (error) {
@@ -55,7 +52,20 @@ export function SystemMetrics() {
           <Users className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.users}</div>
+          <div className="text-2xl font-bold">{metrics.totalUsers}</div>
+          <p
+            className={cn(
+              "mt-2 text-xs",
+              metrics.comparisons.users > 0
+                ? "text-green-500"
+                : metrics.comparisons.users < 0
+                  ? "text-red-500"
+                  : "text-muted-foreground",
+            )}
+          >
+            {metrics.comparisons.users > 0 ? "+" : ""}
+            {metrics.comparisons.users}% em relação ao mês anterior
+          </p>
         </CardContent>
       </Card>
 
@@ -67,7 +77,20 @@ export function SystemMetrics() {
           <Receipt className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.transactions}</div>
+          <div className="text-2xl font-bold">{metrics.totalTransactions}</div>
+          <p
+            className={cn(
+              "mt-2 text-xs",
+              metrics.comparisons.transactions > 0
+                ? "text-green-500"
+                : metrics.comparisons.transactions < 0
+                  ? "text-red-500"
+                  : "text-muted-foreground",
+            )}
+          >
+            {metrics.comparisons.transactions > 0 ? "+" : ""}
+            {metrics.comparisons.transactions}% em relação ao mês anterior
+          </p>
         </CardContent>
       </Card>
 
@@ -79,35 +102,20 @@ export function SystemMetrics() {
           <FolderTree className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.categories}</div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Total de Receitas
-          </CardTitle>
-          <TrendingUp className="size-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-green-500">
-            {formatCurrency(metrics.income)}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">
-            Total de Despesas
-          </CardTitle>
-          <TrendingDown className="size-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold text-red-500">
-            {formatCurrency(metrics.expense)}
-          </div>
+          <div className="text-2xl font-bold">{metrics.totalCategories}</div>
+          <p
+            className={cn(
+              "mt-2 text-xs",
+              metrics.comparisons.categories > 0
+                ? "text-green-500"
+                : metrics.comparisons.categories < 0
+                  ? "text-red-500"
+                  : "text-muted-foreground",
+            )}
+          >
+            {metrics.comparisons.categories > 0 ? "+" : ""}
+            {metrics.comparisons.categories}% em relação ao mês anterior
+          </p>
         </CardContent>
       </Card>
     </div>

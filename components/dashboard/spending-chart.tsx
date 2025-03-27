@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
+import { useDateRange } from "@/contexts/date-range-context";
+import { useTransactions } from "@/contexts/transactions-context";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
 import { Doughnut } from "react-chartjs-2";
 
@@ -10,52 +12,59 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 
 interface SpendingData {
   categoryName: string;
-  _sum: {
-    amount: number;
-  };
+  amount: number;
+  color: string;
 }
 
-const COLORS = [
-  "rgb(59, 130, 246)", // blue-500
-  "rgb(16, 185, 129)", // emerald-500
-  "rgb(239, 68, 68)", // red-500
-  "rgb(245, 158, 11)", // amber-500
-  "rgb(99, 102, 241)", // indigo-500
-  "rgb(236, 72, 153)", // pink-500
-];
-
 export function SpendingChart() {
-  const [data, setData] = useState<SpendingData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { transactions, categories, isLoading } = useTransactions();
+  const { dateRange } = useDateRange();
 
-  useEffect(() => {
-    async function loadSpending() {
-      try {
-        const response = await fetch("/api/dashboard/spending");
-        const data = await response.json();
-        setData(data);
-      } catch (error) {
-        console.error("Erro ao carregar gastos:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  const spendingData = useMemo(() => {
+    // Filtrar transações pelo período
+    const filteredTransactions = transactions.filter(
+      (t) =>
+        new Date(t.date) >= dateRange.start &&
+        new Date(t.date) <= dateRange.end,
+    );
 
-    loadSpending();
-  }, []);
+    // Agrupa transações por categoria
+    const spending = filteredTransactions.reduce<Record<string, number>>(
+      (acc, transaction) => {
+        if (transaction.type === "EXPENSE") {
+          const categoryId = transaction.categoryId;
+          acc[categoryId] = (acc[categoryId] || 0) + Number(transaction.amount);
+        }
+        return acc;
+      },
+      {},
+    );
+
+    // Formata dados para o gráfico
+    return Object.entries(spending)
+      .map(([categoryId, amount]): SpendingData => {
+        const category = categories.find((c) => c.id === categoryId);
+        return {
+          categoryName: category?.name || "Sem categoria",
+          amount,
+          color: category?.color || "#64f296",
+        };
+      })
+      .sort((a, b) => b.amount - a.amount);
+  }, [transactions, categories, dateRange]);
 
   if (isLoading) {
     return <div className="h-[250px] animate-pulse bg-muted" />;
   }
 
-  const total = data.reduce((acc, item) => acc + Number(item._sum.amount), 0);
+  const total = spendingData.reduce((acc, item) => acc + item.amount, 0);
 
   const chartData = {
-    labels: data.map((item) => item.categoryName),
+    labels: spendingData.map((item) => item.categoryName),
     datasets: [
       {
-        data: data.map((item) => Number(item._sum.amount)),
-        backgroundColor: COLORS,
+        data: spendingData.map((item) => item.amount),
+        backgroundColor: spendingData.map((item) => item.color),
         borderWidth: 1,
       },
     ],
@@ -65,7 +74,7 @@ export function SpendingChart() {
     responsive: true,
     plugins: {
       legend: {
-        display: false, // Removemos a legenda do gráfico pois teremos nossa própria lista
+        display: false,
       },
       tooltip: {
         callbacks: {
@@ -84,24 +93,22 @@ export function SpendingChart() {
         <Doughnut data={chartData} options={options} />
       </div>
       <div className="flex w-[200px] flex-col gap-2">
-        {data.map((item, index) => {
-          const percentage = ((Number(item._sum.amount) / total) * 100).toFixed(
-            1,
-          );
+        {spendingData.map((item) => {
+          const percentage = ((item.amount / total) * 100).toFixed(1);
           return (
             <div key={item.categoryName} className="flex flex-col gap-1">
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-2">
                   <div
                     className="size-3 rounded-full"
-                    style={{ backgroundColor: COLORS[index] }}
+                    style={{ backgroundColor: item.color }}
                   />
                   <span className="font-medium">{item.categoryName}</span>
                 </div>
                 <span>{percentage}%</span>
               </div>
               <div className="text-sm text-muted-foreground">
-                {formatCurrency(Number(item._sum.amount))}
+                {formatCurrency(item.amount)}
               </div>
             </div>
           );

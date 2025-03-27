@@ -40,58 +40,9 @@ export default function RelatoriosPage() {
 
         <Tabs defaultValue="overview" className="w-full">
           <TabsList className="grid w-full grid-cols-3 md:w-[600px]">
-            <TabsTrigger value="overview">Visão Geral</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
             <TabsTrigger value="trends">Tendências</TabsTrigger>
           </TabsList>
-
-          <TabsContent value="overview" className="mt-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Receitas vs Despesas</CardTitle>
-                <CardDescription>
-                  Comparativo entre suas receitas e despesas no período
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px]">
-                <Suspense fallback={<Skeleton className="size-full" />}>
-                  <IncomeVsExpensesChart />
-                </Suspense>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="categories" className="mt-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Despesas por Categoria</CardTitle>
-                <CardDescription>
-                  Distribuição de suas despesas por categoria
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px]">
-                <Suspense fallback={<Skeleton className="size-full" />}>
-                  <ExpensesByCategoryChart />
-                </Suspense>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="trends" className="mt-4 space-y-4">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle>Tendências Mensais</CardTitle>
-                <CardDescription>
-                  Evolução de suas finanças ao longo do tempo
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="h-[400px]">
-                <Suspense fallback={<Skeleton className="size-full" />}>
-                  <MonthlyTrendsChart />
-                </Suspense>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </div>
     </DashboardShell>

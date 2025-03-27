@@ -3,36 +3,34 @@ import { auth } from "@/auth";
 
 import { db } from "@/lib/db";
 
-export async function PUT(
+export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: { userId: string } },
 ) {
   try {
     const session = await auth();
-    if (!session?.user) {
+
+    if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
     const body = await req.json();
-    const { name, type, color, icon } = body;
+    const { name, role, isActive } = body;
 
-    const category = await db.categories.update({
+    const user = await db.users.update({
       where: {
-        id: params.id,
-        user_id: session.user.id,
+        id: params.userId,
       },
       data: {
         name,
-        type,
-        color,
-        icon,
-        updated_at: new Date(),
+        role,
+        is_active: isActive,
       },
     });
 
-    return NextResponse.json(category);
+    return NextResponse.json(user);
   } catch (error) {
-    console.error("[CATEGORY_PUT]", error);
+    console.error("[USER_PATCH]", error);
     return new NextResponse("Erro interno", { status: 500 });
   }
 }

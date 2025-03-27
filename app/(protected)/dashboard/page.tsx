@@ -1,6 +1,3 @@
-import { DateRangeProvider } from "@/contexts/date-range-context";
-
-import { getCurrentUser } from "@/lib/session";
 import { constructMetadata } from "@/lib/utils";
 import { DashboardDateFilter } from "@/components/dashboard/date-filter";
 import { DashboardHeader } from "@/components/dashboard/header";
@@ -13,19 +10,15 @@ export const metadata = constructMetadata({
   description: "Controle de finanças pessoais.",
 });
 
-export default async function DashboardPage() {
-  const user = await getCurrentUser();
-
+export default function DashboardPage() {
   return (
     <DashboardShell>
-      <DateRangeProvider>
-        <div className="flex flex-col gap-6">
-          <DashboardHeader />
-          <DashboardDateFilter />
-          <DashboardMetrics />
-          <DashboardWidgets />
-        </div>
-      </DateRangeProvider>
+      <div className="flex flex-col gap-6">
+        <DashboardHeader />
+        <DashboardDateFilter />
+        <DashboardMetrics />
+        <DashboardWidgets />
+      </div>
     </DashboardShell>
   );
 }

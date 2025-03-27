@@ -1,86 +1,77 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { startOfMonth, subMonths } from "date-fns";
 
 import { db } from "@/lib/db";
 
 export async function GET() {
   try {
     const session = await auth();
+
     if (!session?.user || session.user.role !== "admin") {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
-    // Início do mês atual
-    const startOfCurrentMonth = startOfMonth(new Date());
-    // Início do mês anterior
-    const startOfLastMonth = startOfMonth(subMonths(new Date(), 1));
+    // Datas para comparação
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const firstDayOfLastMonth = new Date(
+      today.getFullYear(),
+      today.getMonth() - 1,
+      1,
+    );
 
-    // Buscar métricas
-    const [
-      totalUsers,
-      newUsersThisMonth,
-      lastMonthUsers,
-      paidUsers,
-      activeUsers,
-    ] = await Promise.all([
-      // Total de usuários
+    // Métricas atuais
+    const [totalUsers, newUsersThisMonth] = await Promise.all([
       db.users.count(),
-      // Novos usuários este mês
       db.users.count({
         where: {
           created_at: {
-            gte: startOfCurrentMonth,
-          },
-        },
-      }),
-      // Usuários do mês passado
-      db.users.count({
-        where: {
-          created_at: {
-            gte: startOfLastMonth,
-            lt: startOfCurrentMonth,
-          },
-        },
-      }),
-      // Usuários pagantes
-      db.users.count({
-        where: {
-          stripe_price_id: {
-            not: null,
-          },
-        },
-      }),
-      // Usuários ativos (com transações nos últimos 30 dias)
-      db.users.count({
-        where: {
-          transactions: {
-            some: {
-              created_at: {
-                gte: subMonths(new Date(), 1),
-              },
-            },
+            gte: firstDayOfMonth,
           },
         },
       }),
     ]);
 
-    // Calcular taxas
-    const userGrowthRate = lastMonthUsers
-      ? ((newUsersThisMonth - lastMonthUsers) / lastMonthUsers) * 100
-      : 0;
-    const conversionRate = (paidUsers / totalUsers) * 100;
-    const retentionRate = (activeUsers / totalUsers) * 100;
+    // Métricas do mês anterior
+    const [lastMonthUsers, lastMonthNewUsers] = await Promise.all([
+      db.users.count({
+        where: {
+          created_at: {
+            lt: firstDayOfMonth,
+            gte: firstDayOfLastMonth,
+          },
+        },
+      }),
+      db.users.count({
+        where: {
+          created_at: {
+            lt: firstDayOfMonth,
+            gte: firstDayOfLastMonth,
+          },
+        },
+      }),
+    ]);
+
+    // Calcula as variações percentuais
+    const calculateGrowth = (current: number, previous: number) => {
+      if (previous === 0) return current > 0 ? 100 : 0;
+      return Number((((current - previous) / previous) * 100).toFixed(1));
+    };
 
     return NextResponse.json({
       totalUsers,
       newUsersThisMonth,
-      userGrowthRate: Number(userGrowthRate.toFixed(1)),
-      conversionRate: Number(conversionRate.toFixed(1)),
-      retentionRate: Number(retentionRate.toFixed(1)),
+      userGrowthRate: calculateGrowth(newUsersThisMonth, lastMonthNewUsers),
+      conversionRate: 0, // Implementar lógica real
+      retentionRate: 0, // Implementar lógica real
+      comparisons: {
+        users: calculateGrowth(totalUsers, lastMonthUsers),
+        conversion: 0, // Implementar lógica real
+        retention: 0, // Implementar lógica real
+      },
     });
   } catch (error) {
-    console.error("[GROWTH_METRICS]", error);
+    console.error("[GROWTH_METRICS_GET]", error);
     return new NextResponse("Erro interno", { status: 500 });
   }
 }

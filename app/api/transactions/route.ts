@@ -51,51 +51,35 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   try {
     const session = await auth();
-    if (!session?.user) {
-      return new NextResponse("Não autorizado", { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get("from");
-    const endDate = searchParams.get("to");
-    const type = searchParams.get("type");
-    const categoryId = searchParams.get("category");
 
-    console.log("Filtros recebidos na API:", {
-      startDate,
-      endDate,
-      type,
-      categoryId,
-    });
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+
+    if (!session?.user?.id) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
 
     const transactions = await db.transactions.findMany({
       where: {
         user_id: session.user.id,
-        ...(startDate && endDate
-          ? {
-              date: {
-                gte: new Date(startDate),
-                lte: new Date(endDate),
-              },
-            }
-          : {}),
-        ...(type ? { type } : {}),
-        ...(categoryId ? { categoryId } : {}), // Filtrar por categoryId
-      },
-      include: {
-        categories: true,
+        date: {
+          gte: from ? new Date(from) : undefined,
+          lte: to ? new Date(to) : undefined,
+        },
       },
       orderBy: {
         date: "desc",
       },
+      include: {
+        categories: true,
+      },
     });
-
-    console.log("Transações encontradas:", transactions.length);
 
     return NextResponse.json(transactions);
   } catch (error) {
     console.error("[TRANSACTIONS_GET]", error);
-    return new NextResponse("Erro interno", { status: 500 });
+    return new NextResponse("Internal Error", { status: 500 });
   }
 }
 

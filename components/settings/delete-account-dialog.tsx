@@ -18,24 +18,25 @@ import {
 export function DeleteAccountDialog() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isPending, setIsPending] = useState(false);
 
   async function onDelete() {
+    setIsPending(true);
+
     try {
-      setIsLoading(true);
-      const response = await fetch("/api/user/delete", {
+      const response = await fetch("/api/user", {
         method: "DELETE",
       });
 
-      if (!response.ok) throw new Error("Falha ao excluir conta");
+      if (!response.ok) throw new Error();
 
-      toast.success("Conta excluída com sucesso!");
+      toast.success("Conta excluída com sucesso");
+      setIsOpen(false);
       router.push("/");
     } catch (error) {
       toast.error("Erro ao excluir conta");
     } finally {
-      setIsLoading(false);
-      setIsOpen(false);
+      setIsPending(false);
     }
   }
 
@@ -47,17 +48,33 @@ export function DeleteAccountDialog() {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Você tem certeza?</DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="pt-2">
             Esta ação não pode ser desfeita. Isso excluirá permanentemente sua
-            conta e removerá seus dados de nossos servidores.
+            conta e removerá todos os seus dados de nossos servidores.
           </DialogDescription>
         </DialogHeader>
-        <DialogFooter>
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+        <DialogFooter className="gap-2 sm:gap-0">
+          <Button
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            disabled={isPending}
+          >
             Cancelar
           </Button>
-          <Button variant="destructive" onClick={onDelete} disabled={isLoading}>
-            {isLoading ? "Excluindo..." : "Sim, excluir conta"}
+          <Button
+            variant="destructive"
+            onClick={onDelete}
+            disabled={isPending}
+            className="gap-2"
+          >
+            {isPending ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                <span>Excluindo...</span>
+              </>
+            ) : (
+              "Sim, excluir conta"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

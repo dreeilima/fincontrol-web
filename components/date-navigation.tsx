@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { endOfMonth, format, startOfMonth, subDays } from "date-fns";
+import { useDateRange } from "@/contexts/date-range-context";
+import {
+  addMonths,
+  endOfMonth,
+  format,
+  startOfMonth,
+  subDays,
+  subMonths,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -13,37 +21,33 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 
-interface DateNavigationProps {
-  onDateChange: (start: Date, end: Date) => void;
-}
-
-export function DateNavigation({ onDateChange }: DateNavigationProps) {
+export function DateNavigation() {
+  const { dateRange, setDateRange } = useDateRange();
   const [date, setDate] = useState(new Date());
 
   const handleQuickFilter = (days: number) => {
     const end = new Date();
     const start = subDays(end, days);
-    onDateChange(start, end);
+    setDateRange({ start, end });
   };
 
-  const handleMonthChange = (direction: "prev" | "next") => {
-    const newDate = new Date(date);
-    if (direction === "prev") {
-      newDate.setMonth(date.getMonth() - 1);
-    } else {
-      newDate.setMonth(date.getMonth() + 1);
-    }
-    setDate(newDate);
-    onDateChange(startOfMonth(newDate), endOfMonth(newDate));
+  const handlePreviousMonth = () => {
+    setDateRange({
+      start: subMonths(dateRange.start, 1),
+      end: endOfMonth(subMonths(dateRange.start, 1)),
+    });
+  };
+
+  const handleNextMonth = () => {
+    setDateRange({
+      start: addMonths(dateRange.start, 1),
+      end: endOfMonth(addMonths(dateRange.start, 1)),
+    });
   };
 
   return (
     <div className="flex items-center gap-2 rounded-lg border bg-background p-2">
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => handleMonthChange("prev")}
-      >
+      <Button variant="outline" size="icon" onClick={handlePreviousMonth}>
         <ChevronLeft className="size-4" />
       </Button>
 
@@ -66,7 +70,7 @@ export function DateNavigation({ onDateChange }: DateNavigationProps) {
           variant="outline"
           size="sm"
           onClick={() => {
-            onDateChange(startOfMonth(date), endOfMonth(date));
+            setDateRange({ start: startOfMonth(date), end: endOfMonth(date) });
           }}
         >
           Este mês
@@ -87,7 +91,10 @@ export function DateNavigation({ onDateChange }: DateNavigationProps) {
             onSelect={(newDate) => {
               if (newDate) {
                 setDate(newDate);
-                onDateChange(startOfMonth(newDate), endOfMonth(newDate));
+                setDateRange({
+                  start: startOfMonth(newDate),
+                  end: endOfMonth(newDate),
+                });
               }
             }}
             initialFocus
@@ -95,11 +102,7 @@ export function DateNavigation({ onDateChange }: DateNavigationProps) {
         </PopoverContent>
       </Popover>
 
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => handleMonthChange("next")}
-      >
+      <Button variant="outline" size="icon" onClick={handleNextMonth}>
         <ChevronRight className="size-4" />
       </Button>
     </div>

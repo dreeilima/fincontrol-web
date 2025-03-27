@@ -8,6 +8,8 @@ import {
   useState,
 } from "react";
 
+import { useDateRange } from "./date-range-context";
+
 interface Category {
   id: string;
   user_id: string;
@@ -80,6 +82,7 @@ export function TransactionsProvider({
 }: {
   children: React.ReactNode;
 }) {
+  const { dateRange } = useDateRange();
   const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
   const [filteredTransactions, setFilteredTransactions] = useState<
     Transaction[]
@@ -87,20 +90,21 @@ export function TransactionsProvider({
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Move refreshTransactions to be defined before it's used
-  const refreshTransactions = useCallback(async () => {
-    setIsLoading(true);
+  const fetchTransactions = useCallback(async () => {
     try {
-      const response = await fetch("/api/transactions");
+      const searchParams = new URLSearchParams({
+        from: dateRange.start.toISOString(),
+        to: dateRange.end.toISOString(),
+      });
+
+      const response = await fetch(`/api/transactions?${searchParams}`);
       const data = await response.json();
       setAllTransactions(data);
       setFilteredTransactions(data);
     } catch (error) {
-      console.error("Error refreshing transactions:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("Erro ao buscar transações:", error);
     }
-  }, []);
+  }, [dateRange]);
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -112,11 +116,10 @@ export function TransactionsProvider({
     }
   }, []);
 
-  // Move useEffect after both functions are defined
   useEffect(() => {
     fetchCategories();
-    refreshTransactions();
-  }, [fetchCategories, refreshTransactions]);
+    fetchTransactions();
+  }, [fetchCategories, fetchTransactions]);
 
   const filterTransactions = useCallback(
     async (filters: {
@@ -163,13 +166,13 @@ export function TransactionsProvider({
           body: JSON.stringify(transaction),
         });
         if (!response.ok) throw new Error("Failed to add transaction");
-        await refreshTransactions();
+        await fetchTransactions();
       } catch (error) {
         console.error("Error adding transaction:", error);
         throw error;
       }
     },
-    [refreshTransactions],
+    [fetchTransactions],
   );
 
   const updateTransaction = useCallback(
@@ -196,13 +199,13 @@ export function TransactionsProvider({
           throw new Error("Failed to update transaction");
         }
 
-        await refreshTransactions();
+        await fetchTransactions();
       } catch (error) {
         console.error("Error updating transaction:", error);
         throw error;
       }
     },
-    [refreshTransactions],
+    [fetchTransactions],
   );
 
   const deleteTransaction = useCallback(
@@ -212,13 +215,13 @@ export function TransactionsProvider({
           method: "DELETE",
         });
         if (!response.ok) throw new Error("Failed to delete transaction");
-        await refreshTransactions();
+        await fetchTransactions();
       } catch (error) {
         console.error("Error deleting transaction:", error);
         throw error;
       }
     },
-    [refreshTransactions],
+    [fetchTransactions],
   );
 
   const createCategory = useCallback(
@@ -241,8 +244,8 @@ export function TransactionsProvider({
   );
 
   const deleteCategory = useCallback(
-    async (id: string) => {
-      const response = await fetch(`/api/categories/${id}`, {
+    async (categoryId: string) => {
+      const response = await fetch(`/api/categories/${categoryId}`, {
         method: "DELETE",
       });
       if (!response.ok) throw new Error("Falha ao excluir categoria");
@@ -253,15 +256,15 @@ export function TransactionsProvider({
 
   const updateCategory = useCallback(
     async (
-      id: string,
+      categoryId: string,
       category: {
         name: string;
         type: "INCOME" | "EXPENSE";
-        color: string;
-        icon?: string;
+        color: string | null;
+        icon?: string | null;
       },
     ) => {
-      const response = await fetch(`/api/categories/${id}`, {
+      const response = await fetch(`/api/categories/${categoryId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(category),
@@ -272,10 +275,6 @@ export function TransactionsProvider({
     [fetchCategories],
   );
 
-  useEffect(() => {
-    refreshTransactions();
-  }, [refreshTransactions]);
-
   return (
     <TransactionsContext.Provider
       value={{
@@ -283,7 +282,7 @@ export function TransactionsProvider({
         categories,
         filterTransactions,
         isLoading,
-        refreshTransactions,
+        refreshTransactions: fetchTransactions,
         addTransaction,
         updateTransaction,
         deleteTransaction,

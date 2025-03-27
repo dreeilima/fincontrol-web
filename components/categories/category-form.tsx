@@ -53,9 +53,14 @@ interface CategoryFormProps {
     icon?: string | null;
   };
   onSuccess?: () => void;
+  isSheet?: boolean;
 }
 
-export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
+export function CategoryForm({
+  category,
+  onSuccess,
+  isSheet,
+}: CategoryFormProps) {
   const { createCategory, updateCategory } = useTransactions();
   const [isLoading, setIsLoading] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
@@ -181,7 +186,7 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
                     <Input
                       type="color"
                       {...field}
-                      value={field.value || "#6366f1"}
+                      value={field.value || "#64f296"}
                       className="h-10 w-12 cursor-pointer p-1"
                     />
                     <Input
@@ -202,7 +207,11 @@ export function CategoryForm({ category, onSuccess }: CategoryFormProps) {
         </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? "Salvando..." : "Criar Categoria"}
+          {isLoading
+            ? "Salvando..."
+            : isSheet
+              ? "Salvar Categoria"
+              : "Criar Categoria"}
         </Button>
       </form>
     </Form>

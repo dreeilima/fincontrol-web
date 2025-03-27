@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useDateRange } from "@/contexts/date-range-context";
+import { useTransactions } from "@/contexts/transactions-context";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -20,6 +22,8 @@ interface DashboardMetrics {
 }
 
 export function DashboardMetrics() {
+  const { transactions } = useTransactions();
+  const { dateRange } = useDateRange();
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalBalance: 0,
     monthlyIncome: 0,
@@ -27,6 +31,23 @@ export function DashboardMetrics() {
     monthlyEconomy: 0,
   });
   const [isLoading, setIsLoading] = useState(true);
+
+  const metricsMemo = useMemo(() => {
+    const filteredTransactions = transactions.filter(
+      (t) =>
+        new Date(t.date) >= dateRange.start &&
+        new Date(t.date) <= dateRange.end,
+    );
+
+    return {
+      income: filteredTransactions
+        .filter((t) => t.type === "INCOME")
+        .reduce((acc, t) => acc + Number(t.amount), 0),
+      expense: filteredTransactions
+        .filter((t) => t.type === "EXPENSE")
+        .reduce((acc, t) => acc + Number(t.amount), 0),
+    };
+  }, [transactions, dateRange]);
 
   useEffect(() => {
     async function loadMetrics() {

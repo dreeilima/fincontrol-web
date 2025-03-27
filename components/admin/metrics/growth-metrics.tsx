@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpIcon, Users } from "lucide-react";
+import { ArrowUpRight, Users } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ComparisonIndicator from "@/components/ui/comparison-indicator";
 
 import { MetricsGridSkeleton } from "../skeletons/metrics-skeleton";
 
@@ -13,6 +14,11 @@ interface GrowthMetrics {
   userGrowthRate: number;
   conversionRate: number;
   retentionRate: number;
+  comparisons: {
+    users: number;
+    conversion: number;
+    retention: number;
+  };
 }
 
 export function GrowthMetrics() {
@@ -48,10 +54,19 @@ export function GrowthMetrics() {
           <Users className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{metrics.userGrowthRate}%</div>
-          <p className="text-xs text-muted-foreground">
-            +{metrics.newUsersThisMonth} este mês
-          </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm">Novos Usuários</p>
+              <div className="flex items-center gap-2">
+                <span className="font-bold">{metrics.newUsersThisMonth}</span>
+                <ComparisonIndicator
+                  value={metrics.comparisons.users}
+                  label="vs. mês anterior"
+                />
+              </div>
+            </div>
+            <div className="text-2xl font-bold">{metrics.userGrowthRate}%</div>
+          </div>
         </CardContent>
       </Card>
 
@@ -60,11 +75,14 @@ export function GrowthMetrics() {
           <CardTitle className="text-sm font-medium">
             Taxa de Conversão
           </CardTitle>
-          <ArrowUpIcon className="size-4 text-muted-foreground" />
+          <ArrowUpRight className="size-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{metrics.conversionRate}%</div>
-          <p className="text-xs text-muted-foreground">De gratuito para pago</p>
+          <ComparisonIndicator
+            value={metrics.comparisons.conversion}
+            label="vs. mês anterior"
+          />
         </CardContent>
       </Card>
 
@@ -77,9 +95,10 @@ export function GrowthMetrics() {
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">{metrics.retentionRate}%</div>
-          <p className="text-xs text-muted-foreground">
-            Usuários ativos mensais
-          </p>
+          <ComparisonIndicator
+            value={metrics.comparisons.retention}
+            label="vs. mês anterior"
+          />
         </CardContent>
       </Card>
     </div>

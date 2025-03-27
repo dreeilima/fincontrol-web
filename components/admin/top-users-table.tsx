@@ -22,7 +22,7 @@ interface TopUser {
   email: string;
   totalTransactions: number;
   totalAmount: number;
-  lastActivity: Date;
+  lastActivity: string | null;
 }
 
 export function TopUsersTable() {
@@ -33,7 +33,7 @@ export function TopUsersTable() {
     async function fetchTopUsers() {
       try {
         const response = await fetch("/api/admin/users/top");
-        if (!response.ok) throw new Error("Falha ao carregar usuários");
+        if (!response.ok) throw new Error();
         const data = await response.json();
         setUsers(data);
       } catch (error) {
@@ -46,17 +46,19 @@ export function TopUsersTable() {
     fetchTopUsers();
   }, []);
 
-  if (loading) return <TableSkeleton />;
+  if (loading) {
+    return <TableSkeleton />;
+  }
 
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Usuário</TableHead>
+            <TableHead>Nome</TableHead>
             <TableHead>Email</TableHead>
-            <TableHead>Transações</TableHead>
-            <TableHead>Volume Total</TableHead>
+            <TableHead>Total Transações</TableHead>
+            <TableHead>Total Movimentado</TableHead>
             <TableHead>Última Atividade</TableHead>
           </TableRow>
         </TableHeader>
@@ -68,10 +70,12 @@ export function TopUsersTable() {
               <TableCell>{user.totalTransactions}</TableCell>
               <TableCell>{formatCurrency(user.totalAmount)}</TableCell>
               <TableCell>
-                {formatDistanceToNow(new Date(user.lastActivity), {
-                  addSuffix: true,
-                  locale: ptBR,
-                })}
+                {user.lastActivity
+                  ? formatDistanceToNow(new Date(user.lastActivity), {
+                      addSuffix: true,
+                      locale: ptBR,
+                    })
+                  : "Nunca"}
               </TableCell>
             </TableRow>
           ))}

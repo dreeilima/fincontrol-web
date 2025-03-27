@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { User } from "next-auth";
 import { useForm } from "react-hook-form";
-import { z } from "zod";
+import { toast } from "sonner";
+import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -16,19 +18,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
 
 const securityFormSchema = z
   .object({
     currentPassword: z.string().min(8, {
       message: "A senha atual deve ter pelo menos 8 caracteres.",
     }),
-    newPassword: z.string().min(8, {
-      message: "A nova senha deve ter pelo menos 8 caracteres.",
-    }),
-    confirmPassword: z.string().min(8, {
-      message: "A confirmação de senha deve ter pelo menos 8 caracteres.",
-    }),
+    newPassword: z
+      .string()
+      .min(8, {
+        message: "A nova senha deve ter pelo menos 8 caracteres.",
+      })
+      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/, {
+        message:
+          "A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número.",
+      }),
+    confirmPassword: z.string(),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "As senhas não coincidem.",
@@ -37,8 +42,12 @@ const securityFormSchema = z
 
 type SecurityFormValues = z.infer<typeof securityFormSchema>;
 
-export function SecuritySettings({ user }: { user: any }) {
-  const [isLoading, setIsLoading] = useState(false);
+interface SecuritySettingsProps {
+  user: User;
+}
+
+export function SecuritySettings({ user }: SecuritySettingsProps) {
+  const [isPending, setIsPending] = useState(false);
 
   const form = useForm<SecurityFormValues>({
     resolver: zodResolver(securityFormSchema),
@@ -50,36 +59,28 @@ export function SecuritySettings({ user }: { user: any }) {
   });
 
   async function onSubmit(data: SecurityFormValues) {
-    setIsLoading(true);
+    setIsPending(true);
 
     try {
-      // Aqui você implementaria a lógica para atualizar a senha
-      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulação
-
-      toast({
-        title: "Senha atualizada",
-        description: "Sua senha foi atualizada com sucesso.",
+      const response = await fetch("/api/user/security", {
+        method: "PATCH",
+        body: JSON.stringify(data),
       });
 
-      form.reset({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      if (!response.ok) throw new Error();
+
+      toast.success("Senha atualizada com sucesso!");
+      form.reset();
     } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao atualizar sua senha.",
-        variant: "destructive",
-      });
+      toast.error("Erro ao atualizar senha");
     } finally {
-      setIsLoading(false);
+      setIsPending(false);
     }
   }
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
           name="currentPassword"
@@ -107,7 +108,8 @@ export function SecuritySettings({ user }: { user: any }) {
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormDescription>
-                Sua nova senha deve ter pelo menos 8 caracteres.
+                A senha deve ter pelo menos 8 caracteres, incluindo uma letra
+                maiúscula, uma minúscula e um número.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -131,8 +133,8 @@ export function SecuritySettings({ user }: { user: any }) {
           )}
         />
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? "Atualizando..." : "Atualizar senha"}
+        <Button type="submit" disabled={isPending}>
+          {isPending ? "Atualizando..." : "Atualizar senha"}
         </Button>
       </form>
     </Form>
