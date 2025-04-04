@@ -1,10 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { CheckCircle2Icon, ChevronDownIcon, XCircleIcon } from "lucide-react";
+import { toast } from "sonner";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +45,7 @@ export interface User {
   name: string | null;
   email: string | null;
   plan: string;
+  status?: string;
   role: string;
   isActive: boolean;
   createdAt: Date;
@@ -48,8 +60,13 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ data }: UsersTableProps) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState("basic");
 
   const filteredUsers = data.filter((user) => {
     const matchesSearch =
@@ -62,6 +79,75 @@ export function UsersTable({ data }: UsersTableProps) {
 
     return matchesSearch && matchesStatus;
   });
+
+  const handleToggleStatus = async (user: User) => {
+    if (isLoading) return;
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/admin/users/${user.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: user.name,
+          role: user.role,
+          isActive: !user.isActive,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao atualizar status do usuário");
+      }
+
+      toast.success(
+        `Usuário ${user.isActive ? "desativado" : "ativado"} com sucesso`,
+      );
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao atualizar status do usuário");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleChangePlan = async () => {
+    if (!editingUser || isLoading) return;
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/admin/users/${editingUser.id}/plan`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          plan: selectedPlan,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Falha ao atualizar plano do usuário");
+      }
+
+      toast.success("Plano atualizado com sucesso");
+      setShowPlanDialog(false);
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast.error("Erro ao atualizar plano do usuário");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const openPlanDialog = (user: User) => {
+    setEditingUser(user);
+    setSelectedPlan(user.plan);
+    setShowPlanDialog(true);
+  };
 
   return (
     <div className="space-y-4">
@@ -122,7 +208,9 @@ export function UsersTable({ data }: UsersTableProps) {
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">{user.plan}</Badge>
+                    <Badge variant="outline" className="capitalize">
+                      {user.plan}
+                    </Badge>
                   </TableCell>
                   <TableCell>{user.role}</TableCell>
                   <TableCell>
@@ -136,9 +224,14 @@ export function UsersTable({ data }: UsersTableProps) {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem>Editar</DropdownMenuItem>
-                        <DropdownMenuItem>Alterar Plano</DropdownMenuItem>
-                        <DropdownMenuItem className="text-red-600">
+                        <DropdownMenuItem onClick={() => openPlanDialog(user)}>
+                          Alterar Plano
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          className="text-red-600"
+                          onClick={() => handleToggleStatus(user)}
+                          disabled={isLoading}
+                        >
                           {user.isActive ? "Desativar" : "Ativar"}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -156,6 +249,42 @@ export function UsersTable({ data }: UsersTableProps) {
           </TableBody>
         </Table>
       </div>
+
+      {/* Diálogo para alterar plano */}
+      <Dialog open={showPlanDialog} onOpenChange={setShowPlanDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alterar Plano</DialogTitle>
+            <DialogDescription>
+              Selecione o novo plano para {editingUser?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Select value={selectedPlan} onValueChange={setSelectedPlan}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um plano" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="basic">Básico</SelectItem>
+                <SelectItem value="pro">Pro</SelectItem>
+                <SelectItem value="premium">Premium</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowPlanDialog(false)}
+              disabled={isLoading}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={handleChangePlan} disabled={isLoading}>
+              {isLoading ? "Salvando..." : "Salvar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

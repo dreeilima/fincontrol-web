@@ -1,5 +1,8 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
+
 import { db } from "@/lib/db";
-import { User, UsersTable } from "@/components/admin/users-table";
+import { UsersTable } from "@/components/admin/users-table";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 
@@ -9,44 +12,55 @@ export const metadata = {
 };
 
 export default async function UsersPage() {
-  const users = await db.users
-    .findMany({
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        is_active: true,
-        created_at: true,
-        _count: {
-          select: {
-            transactions: true,
-            categories: true,
-          },
+  const session = await auth();
+
+  if (!session?.user || session.user.role !== "admin") {
+    redirect("/");
+  }
+
+  const users = await db.users.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      is_active: true,
+      created_at: true,
+      subscription: {
+        select: {
+          plan: true,
+          status: true,
         },
       },
-      orderBy: {
-        created_at: "desc",
+      _count: {
+        select: {
+          transactions: true,
+          categories: true,
+        },
       },
-    })
-    .then((users) =>
-      users.map((user) => ({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        isActive: user.is_active,
-        createdAt: user.created_at,
-        plan: "PRO",
-        _count: user._count,
-      })),
-    );
+    },
+    orderBy: {
+      created_at: "desc",
+    },
+  });
+
+  const formattedUsers = users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isActive: user.is_active,
+    createdAt: user.created_at,
+    plan: user.subscription?.plan || "basic",
+    status: user.subscription?.status || "inactive",
+    _count: user._count,
+  }));
 
   return (
     <DashboardShell>
       <DashboardHeader />
       <div className="grid gap-4 sm:gap-6">
-        <UsersTable data={users} />
+        <UsersTable data={formattedUsers} />
       </div>
     </DashboardShell>
   );
