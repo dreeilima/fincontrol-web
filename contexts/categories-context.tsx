@@ -1,7 +1,15 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState } from "react";
-import { Category } from "@prisma/client";
+
+interface Category {
+  id: string;
+  user_id: string;
+  name: string;
+  type: string;
+  icon?: string;
+  color?: string;
+}
 
 interface CategoriesContextType {
   categories: Category[];

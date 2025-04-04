@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { IconArrowLeft, IconArrowRight } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -20,9 +20,9 @@ export const AnimatedTestimonials = ({
 }) => {
   const [active, setActive] = useState(0);
 
-  const handleNext = () => {
+  const handleNext = useCallback(() => {
     setActive((prev) => (prev + 1) % testimonials.length);
-  };
+  }, [testimonials.length]);
 
   const handlePrev = () => {
     setActive((prev) => (prev - 1 + testimonials.length) % testimonials.length);
@@ -33,13 +33,14 @@ export const AnimatedTestimonials = ({
   };
 
   useEffect(() => {
-    if (autoplay) {
-      const interval = setInterval(handleNext, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [autoplay]);
+    if (!autoplay) return;
+
+    const interval = setInterval(handleNext, 5000);
+    return () => clearInterval(interval);
+  }, [autoplay, handleNext]);
 
   const randomRotateY = () => {
+    // Random rotation between -10 and 10 degrees
     return Math.floor(Math.random() * 21) - 10;
   };
   return (

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 
-import { prisma } from "@/lib/db";
+import { db, prisma } from "@/lib/db";
 import { userNameSchema } from "@/lib/validations/user";
 
 export type FormData = {
@@ -21,7 +21,7 @@ export async function updateUserName(userId: string, data: FormData) {
     const { name } = userNameSchema.parse(data);
 
     // Update the user name.
-    await prisma.user.update({
+    await prisma.users.update({
       where: {
         id: userId,
       },

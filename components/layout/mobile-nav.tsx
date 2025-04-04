@@ -53,14 +53,20 @@ export function NavMobile() {
           {navigationLinks &&
             navigationLinks.length > 0 &&
             navigationLinks.map(({ title, href }) => (
-              <li key={href} className="py-3">
-                <Link
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className="flex w-full font-medium capitalize"
-                >
-                  {title}
-                </Link>
+              <li key={href || title} className="py-3">
+                {href ? (
+                  <Link
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className="flex w-full font-medium capitalize"
+                  >
+                    {title}
+                  </Link>
+                ) : (
+                  <span className="flex w-full font-medium capitalize">
+                    {title}
+                  </span>
+                )}
               </li>
             ))}
 

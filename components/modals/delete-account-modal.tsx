@@ -71,8 +71,8 @@ function DeleteAccountModal({
       <div className="flex flex-col items-center justify-center space-y-3 border-b p-4 pt-8 sm:px-16">
         <UserAvatar
           user={{
-            name: session?.user?.name || null,
-            image: session?.user?.image || null,
+            name: session?.user?.name || "",
+            avatar_url: session?.user?.image || null,
           }}
         />
         <h3 className="text-lg font-semibold">Deletar conta</h3>

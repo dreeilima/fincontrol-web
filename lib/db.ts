@@ -1,7 +1,12 @@
-import { prisma } from "./prisma";
+import { PrismaClient } from "@prisma/client";
 
-if (!prisma) {
-  throw new Error("Falha ao iniciar Prisma client");
+declare global {
+  var prisma: PrismaClient | undefined;
 }
 
+export const prisma = globalThis.prisma || new PrismaClient();
 export const db = prisma;
+
+if (process.env.NODE_ENV !== "production") {
+  globalThis.prisma = prisma;
+}

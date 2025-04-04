@@ -14,10 +14,11 @@ export const sendVerificationRequest: EmailConfig["sendVerificationRequest"] =
     const user = await getUserByEmail(identifier);
     if (!user || !user.name) return;
 
-    const userVerified = user?.emailVerified ? true : false;
+    // Assumimos que o usuário está verificado se ele está ativo
+    const userVerified = user?.is_active ? true : false;
     const authSubject = userVerified
-      ? `Sign-in link for ${siteConfig.name}`
-      : "Activate your account";
+      ? `Link de login para ${siteConfig.name}`
+      : "Ative sua conta";
 
     try {
       const { data, error } = await resend.emails.send({

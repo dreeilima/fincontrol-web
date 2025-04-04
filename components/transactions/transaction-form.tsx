@@ -104,7 +104,7 @@ export function TransactionForm({
   useEffect(() => {
     const type = form.watch("type");
     setFilteredCategories(categories.filter((cat) => cat.type === type));
-  }, [categories, form.watch("type")]);
+  }, [categories, form]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

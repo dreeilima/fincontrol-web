@@ -93,7 +93,14 @@ export function TransactionsFilter() {
 
     // Atualiza o resumo com todos os filtros
     fetchSummaryTransactions(filters);
-  }, [date, type, category, fetchTransactions, fetchSummaryTransactions]);
+  }, [
+    date,
+    type,
+    category,
+    fetchTransactions,
+    fetchSummaryTransactions,
+    categories,
+  ]);
 
   return (
     <Card>

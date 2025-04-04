@@ -77,3 +77,19 @@ export interface FeatureLdg {
 }
 
 export type UserWithoutToken = Omit<NextAuthUser, "token">;
+
+export interface MarketingConfig {
+  mainNav: NavItem[];
+}
+
+export interface SiteConfig {
+  name: string;
+  description: string;
+  url: string;
+  ogImage: string;
+  links: {
+    twitter: string;
+    github: string;
+  };
+  mailSupport: string;
+}
