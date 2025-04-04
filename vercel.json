@@ -1,18 +1,11 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next",
-      "config": {
-        "buildCommand": "pnpm run vercel-build"
-      }
-    }
-  ],
-  "build": {
-    "env": {
-      "NODE_VERSION": "18.x",
-      "NPM_FLAGS": "--no-frozen-lockfile"
-    }
+  "buildCommand": "pnpm run vercel-build",
+  "installCommand": "pnpm run vercel-install",
+  "framework": "nextjs",
+  "env": {
+    "NODE_VERSION": "18.x",
+    "PNPM_FLAGS": "--no-frozen-lockfile",
+    "NPM_FLAGS": "--no-frozen-lockfile"
   }
 }
