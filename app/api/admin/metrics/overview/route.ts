@@ -5,6 +5,8 @@ import { format, startOfMonth, subMonths } from "date-fns";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);

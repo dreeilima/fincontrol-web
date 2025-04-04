@@ -3,6 +3,8 @@ import { auth } from "@/auth";
 
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await auth();
@@ -19,6 +21,12 @@ export async function GET() {
         role: true,
         is_active: true,
         created_at: true,
+        subscription: {
+          select: {
+            plan: true,
+            status: true,
+          },
+        },
         _count: {
           select: {
             transactions: true,
@@ -31,7 +39,19 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(users);
+    const formattedUsers = users.map((user) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      isActive: user.is_active,
+      createdAt: user.created_at,
+      plan: user.subscription?.plan || "basic",
+      status: user.subscription?.status || "inactive",
+      _count: user._count,
+    }));
+
+    return NextResponse.json(formattedUsers);
   } catch (error) {
     console.error("[USERS_GET]", error);
     return new NextResponse("Erro interno", { status: 500 });

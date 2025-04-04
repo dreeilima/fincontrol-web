@@ -5,6 +5,8 @@ import { endOfMonth, startOfMonth } from "date-fns";
 
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   try {
     const session = await auth();

@@ -5,6 +5,8 @@ import Stripe from "stripe";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 
+export const dynamic = "force-dynamic";
+
 const relevantEvents = new Set([
   "checkout.session.completed",
   "customer.subscription.created",

@@ -4,6 +4,8 @@ import { auth } from "@/auth";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 
+export const dynamic = "force-dynamic";
+
 interface PlanType {
   id: string | undefined;
   name: string;

@@ -4,6 +4,8 @@ import { Decimal } from "@prisma/client/runtime/library";
 
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
   try {
     const session = await auth();

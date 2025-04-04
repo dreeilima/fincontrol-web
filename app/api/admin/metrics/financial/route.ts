@@ -4,6 +4,8 @@ import Stripe from "stripe";
 
 import { db } from "@/lib/db";
 
+export const dynamic = "force-dynamic";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-04-10",
 });
