@@ -8,7 +8,9 @@ import { createDefaultCategories } from "@/lib/utils/create-default-categories";
 const registerSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
-  phone: z.string().min(11),
+  phone: z
+    .string()
+    .regex(/^55\d{10,11}$/, "Telefone deve incluir DDD e código do país (55)"),
   password: z.string().min(6),
 });
 
@@ -19,6 +21,7 @@ export async function POST(req: Request) {
     // Validate request body against schema
     const result = registerSchema.safeParse(body);
     if (!result.success) {
+      console.log("[VALIDATION_ERROR]", result.error.errors);
       return NextResponse.json(
         { error: "Dados inválidos", details: result.error.errors },
         { status: 400 },

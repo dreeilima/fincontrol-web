@@ -12,17 +12,24 @@ import {
 } from "recharts";
 
 import { formatCurrency } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface CategoryData {
   name: string;
   value: number;
+  percentage: number;
   color: string;
+}
+
+interface ChartData {
+  data: CategoryData[];
+  total: number;
 }
 
 export function ExpensesByCategoryChart() {
   const searchParams = useSearchParams();
-  const [data, setData] = useState<CategoryData[]>([]);
+  const [data, setData] = useState<ChartData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -51,8 +58,8 @@ export function ExpensesByCategoryChart() {
           throw new Error("Erro ao buscar dados do gráfico");
         }
 
-        const data = await response.json();
-        setData(data);
+        const responseData = await response.json();
+        setData(responseData);
       } catch (error) {
         console.error("Erro ao carregar dados do gráfico:", error);
       } finally {
@@ -65,9 +72,31 @@ export function ExpensesByCategoryChart() {
 
   if (isLoading) {
     return (
-      <div className="flex h-[400px] w-full items-center justify-center">
-        <Skeleton className="size-[400px] rounded-full" />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Gastos por Categoria</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[400px] w-full items-center justify-center">
+            <Skeleton className="size-[400px] rounded-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!data || data.data.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Gastos por Categoria</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex h-[400px] w-full items-center justify-center text-muted-foreground">
+            Nenhum dado disponível para o período selecionado
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -91,35 +120,71 @@ export function ExpensesByCategoryChart() {
         fill="white"
         textAnchor={x > cx ? "start" : "end"}
         dominantBaseline="central"
+        className="text-xs font-medium"
       >
-        {`${(percent * 100).toFixed(0)}%`}
+        {`${(percent * 100).toFixed(1)}%`}
       </text>
     );
   };
 
+  const CustomTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="rounded-lg border bg-background p-3 shadow-sm">
+          <p className="font-medium">{data.name}</p>
+          <p className="text-sm text-muted-foreground">
+            Valor: {formatCurrency(data.value)}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            {data.percentage.toFixed(1)}% do total
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%"
-          cy="50%"
-          labelLine={false}
-          label={renderCustomizedLabel}
-          outerRadius={150}
-          fill="#8884d8"
-          dataKey="value"
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={entry.color} />
-          ))}
-        </Pie>
-        <Tooltip
-          formatter={(value: number) => [formatCurrency(value), "Valor"]}
-          labelFormatter={(name) => `Categoria: ${name}`}
-        />
-        <Legend />
-      </PieChart>
-    </ResponsiveContainer>
+    <Card>
+      <CardContent>
+        <div className="h-[400px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data.data}
+                cx="50%"
+                cy="50%"
+                labelLine={true}
+                label={renderCustomizedLabel}
+                outerRadius={140}
+                innerRadius={80}
+                paddingAngle={2}
+                dataKey="value"
+              >
+                {data.data.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color}
+                    strokeWidth={1}
+                  />
+                ))}
+              </Pie>
+              <Tooltip content={<CustomTooltip />} />
+              <Legend
+                layout="vertical"
+                align="right"
+                verticalAlign="middle"
+                formatter={(value, entry: any) => (
+                  <span className="text-sm">
+                    {value} ({formatCurrency(entry.payload.value)})
+                  </span>
+                )}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

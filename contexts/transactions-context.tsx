@@ -7,6 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
+import { endOfMonth, startOfMonth } from "date-fns";
 
 import { useDateRange } from "./date-range-context";
 
@@ -40,14 +41,21 @@ interface Transaction {
 
 interface TransactionsContextType {
   transactions: Transaction[];
+  summaryTransactions: Transaction[];
   categories: Category[];
-  filterTransactions: (filters: {
+  isLoading: boolean;
+  fetchTransactions: (filters?: {
     from?: string;
     to?: string;
     type?: string;
     category?: string;
-  }) => void;
-  isLoading: boolean;
+  }) => Promise<void>;
+  fetchSummaryTransactions: (filters?: {
+    from?: string;
+    to?: string;
+    type?: string;
+    category?: string;
+  }) => Promise<void>;
   refreshTransactions: () => Promise<void>;
   addTransaction: (transaction: Omit<Transaction, "id">) => Promise<void>;
   updateTransaction: (
@@ -83,28 +91,101 @@ export function TransactionsProvider({
   children: React.ReactNode;
 }) {
   const { dateRange } = useDateRange();
-  const [allTransactions, setAllTransactions] = useState<Transaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<
-    Transaction[]
-  >([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [summaryTransactions, setSummaryTransactions] = useState<Transaction[]>(
+    [],
+  );
   const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchTransactions = useCallback(async () => {
-    try {
-      const searchParams = new URLSearchParams({
-        from: dateRange.start.toISOString(),
-        to: dateRange.end.toISOString(),
-      });
+  const fetchTransactions = useCallback(
+    async (
+      filters: {
+        from?: string;
+        to?: string;
+        type?: string;
+        category?: string;
+      } = {},
+    ) => {
+      try {
+        setIsLoading(true);
+        const startDate = filters.from
+          ? new Date(filters.from)
+          : startOfMonth(new Date());
+        const endDate = filters.to
+          ? new Date(filters.to)
+          : endOfMonth(new Date());
 
-      const response = await fetch(`/api/transactions?${searchParams}`);
-      const data = await response.json();
-      setAllTransactions(data);
-      setFilteredTransactions(data);
-    } catch (error) {
-      console.error("Erro ao buscar transações:", error);
-    }
-  }, [dateRange]);
+        const searchParams = new URLSearchParams({
+          from: startDate.toISOString(),
+          to: endDate.toISOString(),
+          limit: "1000",
+        });
+
+        if (filters.type) searchParams.set("type", filters.type);
+        if (filters.category) searchParams.set("category", filters.category);
+
+        const response = await fetch(`/api/transactions?${searchParams}`);
+        const data = await response.json();
+
+        setTransactions(data.transactions);
+        return data;
+      } catch (error) {
+        console.error("Erro ao buscar transações:", error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [],
+  );
+
+  const fetchSummaryTransactions = useCallback(
+    async (
+      filters: {
+        from?: string;
+        to?: string;
+        type?: string;
+        category?: string;
+      } = {},
+    ) => {
+      try {
+        const startDate = filters.from
+          ? new Date(filters.from)
+          : startOfMonth(new Date());
+        const endDate = filters.to
+          ? new Date(filters.to)
+          : endOfMonth(new Date());
+
+        // Ajusta as datas para o início e fim do dia em UTC
+        startDate.setUTCHours(0, 0, 0, 0);
+        endDate.setUTCHours(23, 59, 59, 999);
+
+        const searchParams = new URLSearchParams({
+          from: startDate.toISOString(),
+          to: endDate.toISOString(),
+          limit: "1000",
+        });
+
+        if (filters.type && filters.type !== "all") {
+          searchParams.set("type", filters.type);
+        }
+        if (filters.category && filters.category !== "all") {
+          searchParams.set("category", filters.category);
+        }
+
+        const response = await fetch(`/api/transactions?${searchParams}`);
+        const data = await response.json();
+
+        setSummaryTransactions(data.transactions);
+        return data;
+      } catch (error) {
+        console.error("Erro ao buscar transações do resumo:", error);
+        throw error;
+      }
+    },
+    [],
+  );
 
   const fetchCategories = useCallback(async () => {
     try {
@@ -116,46 +197,12 @@ export function TransactionsProvider({
     }
   }, []);
 
+  // Busca inicial de categorias e transações do mês atual
   useEffect(() => {
     fetchCategories();
     fetchTransactions();
-  }, [fetchCategories, fetchTransactions]);
-
-  const filterTransactions = useCallback(
-    async (filters: {
-      from?: string;
-      to?: string;
-      type?: string;
-      category?: string;
-    }) => {
-      try {
-        console.log("Aplicando filtros no contexto:", filters);
-
-        const params = new URLSearchParams();
-        if (filters.from) params.set("from", filters.from);
-        if (filters.to) params.set("to", filters.to);
-        if (filters.type) params.set("type", filters.type);
-        if (filters.category) params.set("category", filters.category);
-
-        const queryString = params.toString();
-        const url = `/api/transactions${queryString ? `?${queryString}` : ""}`;
-
-        console.log("URL da requisição:", url);
-
-        const response = await fetch(url);
-        if (!response.ok) throw new Error("Falha ao buscar transações");
-
-        const data = await response.json();
-        console.log("Transações filtradas:", data.length);
-
-        setFilteredTransactions(data);
-      } catch (error) {
-        console.error("Erro ao filtrar transações:", error);
-        throw error;
-      }
-    },
-    [],
-  );
+    fetchSummaryTransactions();
+  }, [fetchTransactions, fetchSummaryTransactions]);
 
   const addTransaction = useCallback(
     async (transaction: Omit<Transaction, "id">) => {
@@ -166,13 +213,41 @@ export function TransactionsProvider({
           body: JSON.stringify(transaction),
         });
         if (!response.ok) throw new Error("Failed to add transaction");
-        await fetchTransactions();
+
+        // Atualiza a lista e o resumo com os filtros atuais
+        const currentFilters: {
+          from: string;
+          to: string;
+          type?: string;
+          category?: string;
+        } = {
+          from: dateRange.start.toISOString(),
+          to: dateRange.end.toISOString(),
+        };
+
+        // Pega os filtros da URL
+        const searchParams = new URLSearchParams(window.location.search);
+        const type = searchParams.get("type");
+        const category = searchParams.get("category");
+
+        if (type && type !== "all") currentFilters.type = type;
+        if (category && category !== "all") currentFilters.category = category;
+
+        console.log(
+          "Atualizando após adicionar transação com filtros:",
+          currentFilters,
+        );
+
+        await Promise.all([
+          fetchTransactions(currentFilters),
+          fetchSummaryTransactions(currentFilters),
+        ]);
       } catch (error) {
         console.error("Error adding transaction:", error);
         throw error;
       }
     },
-    [fetchTransactions],
+    [fetchTransactions, fetchSummaryTransactions, dateRange],
   );
 
   const updateTransaction = useCallback(
@@ -181,31 +256,26 @@ export function TransactionsProvider({
         const response = await fetch(`/api/transactions/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            id,
-            description: transaction.description,
-            amount: transaction.amount,
-            date: transaction.date,
-            type: transaction.type,
-            categoryId: transaction.categoryId,
-          }),
+          body: JSON.stringify(transaction),
         });
+        if (!response.ok) throw new Error("Failed to update transaction");
 
-        if (response.status === 404) {
-          throw new Error("Categoria não encontrada");
-        }
+        // Atualiza a lista e o resumo com os filtros atuais
+        const currentFilters = {
+          from: dateRange.start.toISOString(),
+          to: dateRange.end.toISOString(),
+        };
 
-        if (!response.ok) {
-          throw new Error("Failed to update transaction");
-        }
-
-        await fetchTransactions();
+        await Promise.all([
+          fetchTransactions(currentFilters),
+          fetchSummaryTransactions(currentFilters),
+        ]);
       } catch (error) {
         console.error("Error updating transaction:", error);
         throw error;
       }
     },
-    [fetchTransactions],
+    [fetchTransactions, fetchSummaryTransactions, dateRange],
   );
 
   const deleteTransaction = useCallback(
@@ -215,13 +285,23 @@ export function TransactionsProvider({
           method: "DELETE",
         });
         if (!response.ok) throw new Error("Failed to delete transaction");
-        await fetchTransactions();
+
+        // Atualiza a lista e o resumo com os filtros atuais
+        const currentFilters = {
+          from: dateRange.start.toISOString(),
+          to: dateRange.end.toISOString(),
+        };
+
+        await Promise.all([
+          fetchTransactions(currentFilters),
+          fetchSummaryTransactions(currentFilters),
+        ]);
       } catch (error) {
         console.error("Error deleting transaction:", error);
         throw error;
       }
     },
-    [fetchTransactions],
+    [fetchTransactions, fetchSummaryTransactions, dateRange],
   );
 
   const createCategory = useCallback(
@@ -236,7 +316,6 @@ export function TransactionsProvider({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(category),
       });
-
       if (!response.ok) throw new Error("Falha ao criar categoria");
       await fetchCategories();
     },
@@ -275,14 +354,20 @@ export function TransactionsProvider({
     [fetchCategories],
   );
 
+  const refreshTransactions = useCallback(async () => {
+    await Promise.all([fetchTransactions(), fetchSummaryTransactions()]);
+  }, [fetchTransactions, fetchSummaryTransactions]);
+
   return (
     <TransactionsContext.Provider
       value={{
-        transactions: filteredTransactions,
+        transactions,
+        summaryTransactions,
         categories,
-        filterTransactions,
         isLoading,
-        refreshTransactions: fetchTransactions,
+        fetchTransactions,
+        fetchSummaryTransactions,
+        refreshTransactions,
         addTransaction,
         updateTransaction,
         deleteTransaction,

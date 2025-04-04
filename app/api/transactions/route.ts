@@ -55,28 +55,51 @@ export async function GET(req: Request) {
 
     const from = searchParams.get("from");
     const to = searchParams.get("to");
+    const type = searchParams.get("type");
+    const category = searchParams.get("category");
+    const page = parseInt(searchParams.get("page") || "1");
+    const limit = parseInt(searchParams.get("limit") || "8");
+    const skip = (page - 1) * limit;
 
     if (!session?.user?.id) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
+    // Construir a cláusula where
+    const where = {
+      user_id: session.user.id,
+      date: {
+        gte: from ? new Date(from) : undefined,
+        lte: to ? new Date(to) : undefined,
+      },
+      type: type || undefined,
+      categoryId: category || undefined,
+    };
+
+    // Buscar total de transações para paginação
+    const total = await db.transactions.count({
+      where,
+    });
+
     const transactions = await db.transactions.findMany({
-      where: {
-        user_id: session.user.id,
-        date: {
-          gte: from ? new Date(from) : undefined,
-          lte: to ? new Date(to) : undefined,
-        },
-      },
-      orderBy: {
-        date: "desc",
-      },
+      where,
+      orderBy: [{ date: "desc" }, { created_at: "desc" }, { id: "desc" }],
       include: {
         categories: true,
       },
+      take: limit,
+      skip,
     });
 
-    return NextResponse.json(transactions);
+    return NextResponse.json({
+      transactions,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    });
   } catch (error) {
     console.error("[TRANSACTIONS_GET]", error);
     return new NextResponse("Internal Error", { status: 500 });

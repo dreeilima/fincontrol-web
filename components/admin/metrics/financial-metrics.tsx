@@ -48,73 +48,25 @@ export function FinancialMetrics() {
   if (loading || !metrics) return <MetricsGridSkeleton />;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">
-            Receita Mensal (MRR)
-          </CardTitle>
-          <DollarSign className="size-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {formatCurrency(metrics.monthlyRecurringRevenue)}
-          </div>
-          <ComparisonIndicator
-            value={metrics.comparisons.mrr}
-            label="vs. mês anterior"
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">
-            Receita por Usuário
-          </CardTitle>
-          <TrendingUp className="size-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {formatCurrency(metrics.averageRevenuePerUser)}
-          </div>
-          <ComparisonIndicator
-            value={metrics.comparisons.revenue}
-            label="vs. mês anterior"
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium">
-            Taxa de Cancelamento
-          </CardTitle>
-          <TrendingDown className="size-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{metrics.churnRate}%</div>
-          <ComparisonIndicator
-            value={metrics.comparisons.churn}
-            label="vs. mês anterior"
-          />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Volume Total</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {formatCurrency(metrics.volume)}
-          </div>
-          <ComparisonIndicator
-            value={metrics.comparisons.volume}
-            label="vs. mês anterior"
-          />
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <p className="text-sm text-muted-foreground">Receita Mensal (MRR)</p>
+        <p className="mt-1 text-2xl font-medium">
+          {formatCurrency(metrics.monthlyRecurringRevenue)}
+        </p>
+        <span className="text-xs text-green-500">
+          +{metrics.comparisons.mrr}%
+        </span>
+      </div>
+      <div>
+        <p className="text-sm text-muted-foreground">Volume Total</p>
+        <p className="mt-1 text-2xl font-medium">
+          {formatCurrency(metrics.volume)}
+        </p>
+        <span className="text-xs text-green-500">
+          +{metrics.comparisons.volume}%
+        </span>
+      </div>
     </div>
   );
 }

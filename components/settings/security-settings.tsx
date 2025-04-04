@@ -21,29 +21,35 @@ import { Input } from "@/components/ui/input";
 
 const securityFormSchema = z
   .object({
-    currentPassword: z.string().min(8, {
-      message: "A senha atual deve ter pelo menos 8 caracteres.",
-    }),
-    newPassword: z
+    current_password: z.string().min(1, "Senha atual é obrigatória"),
+    new_password: z
       .string()
-      .min(8, {
-        message: "A nova senha deve ter pelo menos 8 caracteres.",
-      })
-      .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])/, {
-        message:
-          "A senha deve conter pelo menos uma letra maiúscula, uma minúscula e um número.",
-      }),
-    confirmPassword: z.string(),
+      .min(8, "A nova senha deve ter pelo menos 8 caracteres")
+      .regex(/[A-Z]/, "A senha deve conter pelo menos uma letra maiúscula")
+      .regex(/[a-z]/, "A senha deve conter pelo menos uma letra minúscula")
+      .regex(/[0-9]/, "A senha deve conter pelo menos um número"),
+    confirm_password: z.string(),
   })
-  .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "As senhas não coincidem.",
-    path: ["confirmPassword"],
+  .refine((data) => data.new_password === data.confirm_password, {
+    message: "As senhas não coincidem",
+    path: ["confirm_password"],
   });
 
 type SecurityFormValues = z.infer<typeof securityFormSchema>;
 
 interface SecuritySettingsProps {
-  user: User;
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image?: string | null;
+    role: "admin" | "user";
+    phone: string | null;
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
+    stripe_price_id: string | null;
+    stripe_current_period_end: Date | null;
+  };
 }
 
 export function SecuritySettings({ user }: SecuritySettingsProps) {
@@ -52,9 +58,9 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
   const form = useForm<SecurityFormValues>({
     resolver: zodResolver(securityFormSchema),
     defaultValues: {
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
+      current_password: "",
+      new_password: "",
+      confirm_password: "",
     },
   });
 
@@ -64,15 +70,27 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
     try {
       const response = await fetch("/api/user/security", {
         method: "PATCH",
-        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          currentPassword: data.current_password,
+          newPassword: data.new_password,
+        }),
       });
 
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Falha ao atualizar senha");
+      }
 
-      toast.success("Senha atualizada com sucesso!");
+      toast.success("Senha atualizada com sucesso");
       form.reset();
     } catch (error) {
-      toast.error("Erro ao atualizar senha");
+      console.error("Erro ao atualizar senha:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível atualizar sua senha",
+      );
     } finally {
       setIsPending(false);
     }
@@ -80,32 +98,28 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
-          name="currentPassword"
+          name="current_password"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Senha Atual</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input type="password" {...field} />
               </FormControl>
-              <FormDescription>
-                Digite sua senha atual para confirmar sua identidade.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
-          name="newPassword"
+          name="new_password"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Nova Senha</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input type="password" {...field} />
               </FormControl>
               <FormDescription>
                 A senha deve ter pelo menos 8 caracteres, incluindo uma letra
@@ -115,24 +129,19 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
-          name="confirmPassword"
+          name="confirm_password"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Confirmar Nova Senha</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input type="password" {...field} />
               </FormControl>
-              <FormDescription>
-                Digite novamente sua nova senha para confirmar.
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <Button type="submit" disabled={isPending}>
           {isPending ? "Atualizando..." : "Atualizar senha"}
         </Button>

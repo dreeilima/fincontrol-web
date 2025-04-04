@@ -17,7 +17,13 @@ import { SecuritySettings } from "./security-settings";
 import { UserSettings } from "./user-settings";
 
 // Omitir a propriedade token do tipo User
-type UserWithoutToken = Omit<NextAuthUser, "token">;
+type UserWithoutToken = Omit<NextAuthUser, "token"> & {
+  phone: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  stripe_current_period_end: Date | null;
+};
 
 interface SettingsTabsProps {
   user: UserWithoutToken;

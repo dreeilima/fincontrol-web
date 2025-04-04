@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
-import { useDateRange } from "@/contexts/date-range-context";
+import { useMemo } from "react";
 import { useTransactions } from "@/contexts/transactions-context";
 import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js";
+import { endOfMonth, startOfMonth } from "date-fns";
 import { Doughnut } from "react-chartjs-2";
 
 import { cn, formatCurrency } from "@/lib/utils";
@@ -18,40 +18,82 @@ interface SpendingData {
 
 export function SpendingChart() {
   const { transactions, categories, isLoading } = useTransactions();
-  const { dateRange } = useDateRange();
 
   const spendingData = useMemo(() => {
-    // Filtrar transações pelo período
-    const filteredTransactions = transactions.filter(
-      (t) =>
-        new Date(t.date) >= dateRange.start &&
-        new Date(t.date) <= dateRange.end,
-    );
+    const startDate = startOfMonth(new Date());
+    const endDate = endOfMonth(new Date());
 
-    // Agrupa transações por categoria
-    const spending = filteredTransactions.reduce<Record<string, number>>(
-      (acc, transaction) => {
-        if (transaction.type === "EXPENSE") {
-          const categoryId = transaction.categoryId;
-          acc[categoryId] = (acc[categoryId] || 0) + Number(transaction.amount);
+    // Filtrar transações do mês atual
+    const filteredTransactions = transactions.filter((t) => {
+      const date = new Date(t.date);
+      return date >= startDate && date <= endDate;
+    });
+
+    // Agrupa transações por categoria normalizada
+    const spending = filteredTransactions.reduce<
+      Record<string, { amount: number; color: string | null }>
+    >((acc, transaction) => {
+      if (transaction.type === "EXPENSE") {
+        const category = categories.find(
+          (c) => c.id === transaction.categoryId,
+        );
+        // Normaliza o nome da categoria (lowercase e sem acentos)
+        const categoryName =
+          category?.name
+            ?.toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "") || "sem categoria";
+
+        if (!acc[categoryName]) {
+          acc[categoryName] = {
+            amount: 0,
+            color: category?.color || "#64f296",
+          };
         }
-        return acc;
-      },
-      {},
-    );
+        acc[categoryName].amount += Number(transaction.amount);
+      }
+      return acc;
+    }, {});
 
     // Formata dados para o gráfico
-    return Object.entries(spending)
-      .map(([categoryId, amount]): SpendingData => {
-        const category = categories.find((c) => c.id === categoryId);
+    const allCategories = Object.entries(spending)
+      .map(([categoryKey, data]): SpendingData => {
+        // Capitaliza a primeira letra de cada palavra
+        const categoryName =
+          categoryKey === "sem categoria"
+            ? "Sem categoria"
+            : categoryKey
+                .split(" ")
+                .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(" ");
+
         return {
-          categoryName: category?.name || "Sem categoria",
-          amount,
-          color: category?.color || "#64f296",
+          categoryName,
+          amount: data.amount,
+          color: data.color || "#64f296",
         };
       })
       .sort((a, b) => b.amount - a.amount);
-  }, [transactions, categories, dateRange]);
+
+    // Pega as 6 maiores categorias
+    const topCategories = allCategories.slice(0, 6);
+
+    // Agrupa o resto em "Outros"
+    const otherCategories = allCategories.slice(6);
+    if (otherCategories.length > 0) {
+      const othersAmount = otherCategories.reduce(
+        (acc, item) => acc + item.amount,
+        0,
+      );
+      topCategories.push({
+        categoryName: "Outros",
+        amount: othersAmount,
+        color: "#6b7280", // Cor cinza para "Outros"
+      });
+    }
+
+    return topCategories;
+  }, [transactions, categories]);
 
   if (isLoading) {
     return <div className="h-[250px] animate-pulse bg-muted" />;
@@ -80,7 +122,8 @@ export function SpendingChart() {
         callbacks: {
           label: (context: any) => {
             const value = context.raw;
-            return `${context.label}: ${formatCurrency(value)}`;
+            const percentage = ((value / total) * 100).toFixed(1);
+            return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
           },
         },
       },

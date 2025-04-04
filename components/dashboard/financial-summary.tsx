@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useDateRange } from "@/contexts/date-range-context";
 import { useTransactions } from "@/contexts/transactions-context";
 import { ArrowDownIcon, ArrowUpIcon, DollarSign, Wallet } from "lucide-react";
 
@@ -17,7 +18,8 @@ interface FinancialData {
 }
 
 export function FinancialSummary() {
-  const { transactions } = useTransactions();
+  const { summaryTransactions } = useTransactions();
+  const { dateRange } = useDateRange();
   const [data, setData] = useState<FinancialData>({
     totalIncome: 0,
     totalExpense: 0,
@@ -27,28 +29,55 @@ export function FinancialSummary() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (transactions && transactions.length > 0) {
+    console.log("Calculando resumo com transações:", summaryTransactions);
+
+    if (summaryTransactions && summaryTransactions.length > 0) {
       try {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
-        const recentTransactions = transactions.filter(
-          (t) => new Date(t.date) >= thirtyDaysAgo,
-        );
-
-        const totalIncome = recentTransactions
+        // Calcula o total de receitas
+        const totalIncome = summaryTransactions
           .filter((t) => t.type === "INCOME")
-          .reduce((sum, t) => sum + Number(t.amount), 0);
+          .reduce((sum, t) => {
+            const amount =
+              typeof t.amount === "string"
+                ? parseFloat(t.amount)
+                : Number(t.amount);
+            return sum + Math.abs(amount); // Garante valor positivo
+          }, 0);
 
-        const totalExpense = recentTransactions
+        // Calcula o total de despesas
+        const totalExpense = summaryTransactions
           .filter((t) => t.type === "EXPENSE")
-          .reduce((sum, t) => sum + Number(t.amount), 0);
+          .reduce((sum, t) => {
+            const amount =
+              typeof t.amount === "string"
+                ? parseFloat(t.amount)
+                : Number(t.amount);
+            return sum + Math.abs(amount); // Garante valor positivo
+          }, 0);
 
-        const balance = totalIncome - totalExpense;
-        const economyRate =
-          totalIncome > 0
-            ? Math.max(0, Math.min(100, (balance / totalIncome) * 100))
-            : 0;
+        console.log("Totais calculados (brutos):", {
+          totalIncome: totalIncome.toFixed(2),
+          totalExpense: totalExpense.toFixed(2),
+        });
+
+        // Calcula o saldo (receitas - despesas)
+        const balance = totalIncome - totalExpense; // Agora a subtração está correta
+
+        // Calcula a taxa de economia
+        let economyRate = 0;
+        if (totalIncome > 0) {
+          // Se houver receita, calcula quanto foi economizado em relação à receita
+          economyRate = ((totalIncome - totalExpense) / totalIncome) * 100;
+          // Garante que a taxa fique entre 0% e 100%
+          economyRate = Math.max(0, Math.min(100, economyRate));
+        }
+
+        console.log("Métricas calculadas (finais):", {
+          receita: totalIncome.toFixed(2),
+          despesa: totalExpense.toFixed(2),
+          saldo: balance.toFixed(2),
+          taxaEconomia: economyRate.toFixed(2),
+        });
 
         setData({
           totalIncome,
@@ -63,8 +92,14 @@ export function FinancialSummary() {
       }
     } else {
       setIsLoading(false);
+      setData({
+        totalIncome: 0,
+        totalExpense: 0,
+        balance: 0,
+        economyRate: 0,
+      });
     }
-  }, [transactions]);
+  }, [summaryTransactions]);
 
   if (isLoading) {
     return (
@@ -90,7 +125,7 @@ export function FinancialSummary() {
             {formatCurrency(data?.totalIncome || 0)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Total de entradas nos últimos 30 dias
+            Total de entradas no período selecionado
           </p>
         </CardContent>
       </Card>
@@ -105,7 +140,7 @@ export function FinancialSummary() {
             {formatCurrency(data?.totalExpense || 0)}
           </div>
           <p className="text-xs text-muted-foreground">
-            Total de saídas nos últimos 30 dias
+            Total de saídas no período selecionado
           </p>
         </CardContent>
       </Card>

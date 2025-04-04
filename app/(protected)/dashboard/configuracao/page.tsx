@@ -22,7 +22,7 @@ export default async function SettingsPage() {
     <DashboardShell>
       <div className="flex flex-col gap-6">
         <DashboardHeader />
-        <SettingsTabs user={session.user} />
+        <SettingsTabs user={session.user as any} />
       </div>
     </DashboardShell>
   );

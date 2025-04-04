@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useDateRange } from "@/contexts/date-range-context";
 import { useTransactions } from "@/contexts/transactions-context";
+import { endOfMonth, startOfMonth } from "date-fns";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -14,57 +14,86 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
-interface DashboardMetrics {
-  totalBalance: number;
-  monthlyIncome: number;
-  monthlyExpense: number;
-  monthlyEconomy: number;
-}
-
 export function DashboardMetrics() {
   const { transactions } = useTransactions();
-  const { dateRange } = useDateRange();
-  const [metrics, setMetrics] = useState<DashboardMetrics>({
-    totalBalance: 0,
-    monthlyIncome: 0,
-    monthlyExpense: 0,
-    monthlyEconomy: 0,
-  });
   const [isLoading, setIsLoading] = useState(true);
 
-  const metricsMemo = useMemo(() => {
-    const filteredTransactions = transactions.filter(
-      (t) =>
-        new Date(t.date) >= dateRange.start &&
-        new Date(t.date) <= dateRange.end,
-    );
+  const metrics = useMemo(() => {
+    try {
+      const startDate = startOfMonth(new Date());
+      const endDate = endOfMonth(new Date());
 
-    return {
-      income: filteredTransactions
+      const filteredTransactions = transactions.filter((t) => {
+        const date = new Date(t.date);
+        return date >= startDate && date <= endDate;
+      });
+
+      // Calcula receitas
+      const monthlyIncome = filteredTransactions
         .filter((t) => t.type === "INCOME")
-        .reduce((acc, t) => acc + Number(t.amount), 0),
-      expense: filteredTransactions
+        .reduce((sum, t) => {
+          const amount =
+            typeof t.amount === "string"
+              ? parseFloat(t.amount)
+              : Number(t.amount);
+          return sum + Math.abs(amount);
+        }, 0);
+
+      // Calcula despesas
+      const monthlyExpense = filteredTransactions
         .filter((t) => t.type === "EXPENSE")
-        .reduce((acc, t) => acc + Number(t.amount), 0),
-    };
-  }, [transactions, dateRange]);
+        .reduce((sum, t) => {
+          const amount =
+            typeof t.amount === "string"
+              ? parseFloat(t.amount)
+              : Number(t.amount);
+          return sum + Math.abs(amount);
+        }, 0);
+
+      // Calcula saldo e economia
+      const totalBalance = monthlyIncome - monthlyExpense;
+      const monthlyEconomy =
+        monthlyIncome > 0
+          ? ((monthlyIncome - monthlyExpense) / monthlyIncome) * 100
+          : 0;
+
+      console.log("Métricas do Dashboard calculadas:", {
+        monthlyIncome: monthlyIncome.toFixed(2),
+        monthlyExpense: monthlyExpense.toFixed(2),
+        totalBalance: totalBalance.toFixed(2),
+        monthlyEconomy: monthlyEconomy.toFixed(2),
+      });
+
+      return {
+        monthlyIncome,
+        monthlyExpense,
+        totalBalance,
+        monthlyEconomy,
+      };
+    } catch (error) {
+      console.error("Erro ao calcular métricas:", error);
+      return {
+        monthlyIncome: 0,
+        monthlyExpense: 0,
+        totalBalance: 0,
+        monthlyEconomy: 0,
+      };
+    }
+  }, [transactions]);
 
   useEffect(() => {
-    async function loadMetrics() {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/dashboard/metrics");
-        const data = await response.json();
-        setMetrics(data);
-      } catch (error) {
-        console.error("Erro ao carregar métricas:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    loadMetrics();
+    setIsLoading(false);
   }, []);
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-[120px]" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -92,6 +121,8 @@ export function DashboardMetrics() {
           value: metrics.monthlyEconomy,
           icon: TrendingUpIcon,
           className: "text-blue-500",
+          isCurrency: false,
+          suffix: "%",
         },
       ].map((metric) => (
         <Card key={metric.title}>
@@ -102,13 +133,11 @@ export function DashboardMetrics() {
             <metric.icon className={cn("size-4", metric.className)} />
           </CardHeader>
           <CardContent>
-            {isLoading ? (
-              <Skeleton className="h-7 w-[120px]" />
-            ) : (
-              <div className={cn("text-2xl font-bold", metric.className)}>
-                {formatCurrency(metric.value)}
-              </div>
-            )}
+            <div className={cn("text-2xl font-bold", metric.className)}>
+              {metric.isCurrency === false
+                ? `${metric.value.toFixed(1)}${metric.suffix || ""}`
+                : formatCurrency(metric.value)}
+            </div>
           </CardContent>
         </Card>
       ))}

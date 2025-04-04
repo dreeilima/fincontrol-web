@@ -54,6 +54,7 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
   });
 
   async function onSubmit(values: z.infer<typeof registerSchema>) {
+    console.log("Dados enviados:", values);
     setIsLoading(true);
 
     try {
@@ -66,6 +67,7 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
 
       if (!response.ok) {
         const data = await response.json();
+        console.log("Erro na resposta:", data);
         throw new Error(data.error || "Erro ao criar conta");
       }
 
@@ -157,9 +159,7 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
                       country="br"
                       value={value}
                       onChange={(phone) => {
-                        // Remove todos os caracteres não numéricos e adiciona o código do país (55 para Brasil)
                         const cleanNumber = phone.replace(/\D/g, "");
-                        // Se já começar com 55, não adiciona novamente
                         const formattedNumber = cleanNumber.startsWith("55")
                           ? cleanNumber
                           : `55${cleanNumber}`;
@@ -167,7 +167,7 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
                       }}
                       containerClass="w-full"
                       inputProps={{
-                        placeholder: "(11) 95353-8989",
+                        placeholder: "Digite seu telefone com DDD",
                       }}
                       inputStyle={{
                         width: "100%",

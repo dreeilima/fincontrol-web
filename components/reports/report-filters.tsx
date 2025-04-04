@@ -2,9 +2,16 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { format, subMonths } from "date-fns";
+import {
+  endOfMonth,
+  endOfYear,
+  format,
+  startOfMonth,
+  startOfYear,
+  subMonths,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon, FilterIcon } from "lucide-react";
+import { CalendarIcon, FilterIcon, XIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -28,11 +35,7 @@ export function ReportFilters() {
   const searchParams = useSearchParams();
 
   const today = new Date();
-  const firstDayCurrentMonth = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    1,
-  );
+  const firstDayCurrentMonth = startOfMonth(today);
 
   const [startDate, setStartDate] = useState<Date | undefined>(
     searchParams.get("startDate")
@@ -54,50 +57,80 @@ export function ReportFilters() {
     setPeriod(value);
 
     const today = new Date();
+    let start: Date;
+    let end: Date;
 
     switch (value) {
       case "current-month":
-        setStartDate(new Date(today.getFullYear(), today.getMonth(), 1));
-        setEndDate(today);
+        start = startOfMonth(today);
+        end = today;
         break;
       case "last-month":
-        setStartDate(new Date(today.getFullYear(), today.getMonth() - 1, 1));
-        setEndDate(new Date(today.getFullYear(), today.getMonth(), 0));
+        const lastMonth = subMonths(today, 1);
+        start = startOfMonth(lastMonth);
+        end = endOfMonth(lastMonth);
         break;
       case "last-3-months":
-        setStartDate(subMonths(today, 3));
-        setEndDate(today);
+        start = startOfMonth(subMonths(today, 2));
+        end = today;
         break;
       case "last-6-months":
-        setStartDate(subMonths(today, 6));
-        setEndDate(today);
+        start = startOfMonth(subMonths(today, 5));
+        end = today;
         break;
       case "year-to-date":
-        setStartDate(new Date(today.getFullYear(), 0, 1));
-        setEndDate(today);
+        start = startOfYear(today);
+        end = today;
         break;
       case "last-year":
-        setStartDate(new Date(today.getFullYear() - 1, 0, 1));
-        setEndDate(new Date(today.getFullYear() - 1, 11, 31));
+        const lastYear = subMonths(today, 12);
+        start = startOfYear(lastYear);
+        end = endOfYear(lastYear);
         break;
       case "custom":
-        // Manter as datas atuais para seleção personalizada
-        break;
+        // Mantém as datas atuais para seleção personalizada
+        return;
+      default:
+        start = startOfMonth(today);
+        end = today;
+    }
+
+    setStartDate(start);
+    setEndDate(end);
+
+    // Se não for personalizado, aplica os filtros automaticamente
+    if (value !== "custom") {
+      const params = new URLSearchParams();
+      params.set("startDate", format(start, "yyyy-MM-dd"));
+      params.set("endDate", format(end, "yyyy-MM-dd"));
+      params.set("period", value);
+      router.push(`/dashboard/relatorio?${params.toString()}`);
     }
   };
 
   const applyFilters = () => {
+    if (!startDate || !endDate) return;
+
     const params = new URLSearchParams();
-
-    if (startDate) {
-      params.set("startDate", format(startDate, "yyyy-MM-dd"));
-    }
-
-    if (endDate) {
-      params.set("endDate", format(endDate, "yyyy-MM-dd"));
-    }
-
+    params.set("startDate", format(startDate, "yyyy-MM-dd"));
+    params.set("endDate", format(endDate, "yyyy-MM-dd"));
     params.set("period", period);
+
+    router.push(`/dashboard/relatorio?${params.toString()}`);
+  };
+
+  const clearFilters = () => {
+    const today = new Date();
+    const firstDayCurrentMonth = startOfMonth(today);
+
+    setStartDate(firstDayCurrentMonth);
+    setEndDate(today);
+    setPeriod("current-month");
+
+    const params = new URLSearchParams();
+    params.set("startDate", format(firstDayCurrentMonth, "yyyy-MM-dd"));
+    params.set("endDate", format(today, "yyyy-MM-dd"));
+    params.set("period", "current-month");
 
     router.push(`/dashboard/relatorio?${params.toString()}`);
   };
@@ -132,6 +165,7 @@ export function ReportFilters() {
                     "w-[200px] justify-start text-left font-normal",
                     !startDate && "text-muted-foreground",
                   )}
+                  disabled={period !== "custom"}
                 >
                   <CalendarIcon className="mr-2 size-4" />
                   {startDate
@@ -146,6 +180,7 @@ export function ReportFilters() {
                   onSelect={setStartDate}
                   initialFocus
                   locale={ptBR}
+                  disabled={period !== "custom"}
                 />
               </PopoverContent>
             </Popover>
@@ -160,6 +195,7 @@ export function ReportFilters() {
                     "w-[200px] justify-start text-left font-normal",
                     !endDate && "text-muted-foreground",
                   )}
+                  disabled={period !== "custom"}
                 >
                   <CalendarIcon className="mr-2 size-4" />
                   {endDate
@@ -174,13 +210,18 @@ export function ReportFilters() {
                   onSelect={setEndDate}
                   initialFocus
                   locale={ptBR}
+                  disabled={period !== "custom"}
                 />
               </PopoverContent>
             </Popover>
           </div>
 
-          <div className="ml-auto">
-            <Button onClick={applyFilters}>
+          <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" onClick={clearFilters} className="gap-2">
+              <XIcon className="size-4" />
+              Limpar Filtros
+            </Button>
+            <Button onClick={applyFilters} disabled={period !== "custom"}>
               <FilterIcon className="mr-2 size-4" />
               Aplicar Filtros
             </Button>

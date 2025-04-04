@@ -28,7 +28,8 @@ import {
 export function TransactionsFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { categories, filterTransactions } = useTransactions();
+  const { categories, fetchTransactions, fetchSummaryTransactions } =
+    useTransactions();
 
   const [date, setDate] = useState<DateRange | undefined>({
     from: searchParams.get("from")
@@ -46,25 +47,6 @@ export function TransactionsFilter() {
     if (type === "all") return categories;
     return categories.filter((cat) => cat.type === type);
   }, [categories, type]);
-
-  useEffect(() => {
-    // Apply filters whenever any filter value changes
-    const filters = {
-      from: date?.from ? format(date.from, "yyyy-MM-dd") : undefined,
-      to: date?.to ? format(date.to, "yyyy-MM-dd") : undefined,
-      type: type !== "all" ? type : undefined,
-      category: category !== "all" ? category : undefined,
-    };
-
-    console.log("Aplicando filtros:", {
-      filters,
-      currentType: type,
-      currentCategory: category,
-      selectedCategory: categories.find((c) => c.id === category),
-    });
-
-    filterTransactions(filters);
-  }, [date, type, category, filterTransactions, categories]);
 
   const handleFilter = useCallback(
     (key: string, value: string) => {
@@ -87,18 +69,31 @@ export function TransactionsFilter() {
     setType("all");
     setCategory("all");
     router.push("/dashboard/financas");
-    filterTransactions({}); // Clear filters in context
+    Promise.all([fetchTransactions({}), fetchSummaryTransactions({})]); // Clear filters in context
   };
 
-  // Apply filters on mount and when URL params change
+  // Aplica filtros quando os valores mudam
   useEffect(() => {
     const filters = {
-      date: searchParams.get("date") || undefined,
-      type: searchParams.get("type") || undefined,
-      category: searchParams.get("category") || undefined,
+      from: date?.from ? format(date.from, "yyyy-MM-dd") : undefined,
+      to: date?.to ? format(date.to, "yyyy-MM-dd") : undefined,
+      type: type !== "all" ? type : undefined,
+      category: category !== "all" ? category : undefined,
     };
-    filterTransactions(filters);
-  }, [searchParams, filterTransactions]);
+
+    console.log("Aplicando filtros:", {
+      filters,
+      currentType: type,
+      currentCategory: category,
+      selectedCategory: categories.find((c) => c.id === category),
+    });
+
+    // Atualiza a lista de transações com paginação
+    fetchTransactions(filters);
+
+    // Atualiza o resumo com todos os filtros
+    fetchSummaryTransactions(filters);
+  }, [date, type, category, fetchTransactions, fetchSummaryTransactions]);
 
   return (
     <Card>

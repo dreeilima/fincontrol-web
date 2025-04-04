@@ -131,6 +131,20 @@ model user_goals {
   user             users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
+model user_preferences {
+  id                    String   @id @default(uuid())
+  user_id              String   @unique
+  email_notifications  Boolean  @default(true)
+  marketing_emails     Boolean  @default(false)
+  transaction_alerts   Boolean  @default(true)
+  budget_alerts        Boolean  @default(true)
+  theme               String   @default("light")
+  language            String   @default("pt-BR")
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @updatedAt @db.Timestamptz(6)
+  user                users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
 // Atualizar o modelo users para incluir a relação
 model users {
   id                        String          @id @default(uuid())
@@ -165,10 +179,8 @@ model users {
   transactions              transactions[]
   subscription             subscriptions?   // Adicionar esta linha
   goals                     user_goals?
+  preferences               user_preferences?
 }
-
-
-
 
 model verification_tokens {
   identifier String

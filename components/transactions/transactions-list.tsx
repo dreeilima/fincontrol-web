@@ -8,6 +8,8 @@ import { ptBR } from "date-fns/locale";
 import {
   ArrowDownIcon,
   ArrowUpIcon,
+  ChevronLeft,
+  ChevronRight,
   MoreHorizontal,
   Pencil,
   Trash2,
@@ -49,8 +51,13 @@ import { useToast } from "@/components/ui/use-toast";
 import { TransactionSheet } from "./transaction-sheet";
 
 export function TransactionsList() {
-  const { transactions, isLoading, deleteTransaction, categories } =
-    useTransactions();
+  const {
+    transactions,
+    isLoading,
+    deleteTransaction,
+    categories,
+    fetchTransactions,
+  } = useTransactions();
   const { toast } = useToast();
 
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -66,25 +73,6 @@ export function TransactionsList() {
   const getCategoryLabel = (categoryId: string) => {
     const category = categories.find((cat) => cat.id === categoryId);
     return category?.name || categoryId;
-  };
-
-  // Função para formatar a data corretamente
-  const formatTransactionDate = (dateString: string) => {
-    console.log("Data recebida para formatação:", dateString);
-
-    if (dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-      console.log("Data já está no formato correto:", dateString);
-      return dateString;
-    }
-
-    const date = new Date(dateString);
-    const formatted = format(date, "yyyy-MM-dd");
-    console.log("Data após formatação:", {
-      original: dateString,
-      formatted: formatted,
-    });
-
-    return formatted;
   };
 
   const handleEdit = (id: string) => {
@@ -141,7 +129,7 @@ export function TransactionsList() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {Array.from({ length: 5 }).map((_, index) => (
+            {Array.from({ length: 8 }).map((_, index) => (
               <TableRow key={index}>
                 <TableCell>
                   <div className="flex items-center gap-2">
@@ -172,99 +160,99 @@ export function TransactionsList() {
   return (
     <>
       <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {transactions.length === 0 ? (
+        <div className="max-h-[600px] overflow-y-auto">
+          <Table>
+            <TableHeader className="sticky top-0 bg-background">
               <TableRow>
-                <TableCell colSpan={5} className="h-24 text-center">
-                  Nenhuma transação encontrada.
-                </TableCell>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Data</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
-            ) : (
-              transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center">
-                      {transaction.type === "INCOME" ? (
-                        <ArrowUpIcon className="mr-2 size-4 text-green-500" />
-                      ) : (
-                        <ArrowDownIcon className="mr-2 size-4 text-red-500" />
-                      )}
-                      {transaction.description}
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <Badge variant="outline">
-                      {getCategoryLabel(transaction.category)}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {(() => {
-                      // Ajusta o timezone adicionando 3 horas para compensar UTC-3
-                      const date = new Date(transaction.date);
-                      date.setHours(date.getHours() + 3);
-
-                      return format(date, "dd/MM/yyyy", { locale: ptBR });
-                    })()}
-                  </TableCell>
-                  <TableCell
-                    className={cn(
-                      "text-right font-medium",
-                      transaction.type === "INCOME"
-                        ? "text-green-500"
-                        : "text-red-500",
-                    )}
-                  >
-                    {formatCurrency(Number(transaction.amount))}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="size-8 p-0">
-                          <span className="sr-only">Abrir menu</span>
-                          <MoreHorizontal className="size-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Ações</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          onClick={() => handleEdit(transaction.id)}
-                        >
-                          <Pencil className="mr-2 size-4" />
-                          Editar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDeleteClick(transaction.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 size-4" />
-                          Excluir
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            </TableHeader>
+            <TableBody>
+              {transactions.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="h-24 text-center">
+                    Nenhuma transação encontrada.
                   </TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                transactions.map((transaction) => (
+                  <TableRow key={transaction.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center">
+                        {transaction.type === "INCOME" ? (
+                          <ArrowUpIcon className="mr-2 size-4 text-green-500" />
+                        ) : (
+                          <ArrowDownIcon className="mr-2 size-4 text-red-500" />
+                        )}
+                        {transaction.description}
+                      </div>
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge variant="outline">
+                        {getCategoryLabel(transaction.category)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const date = new Date(transaction.date);
+                        date.setHours(date.getHours() + 3);
+                        return format(date, "dd/MM/yyyy", { locale: ptBR });
+                      })()}
+                    </TableCell>
+                    <TableCell
+                      className={cn(
+                        "text-right font-medium",
+                        transaction.type === "INCOME"
+                          ? "text-green-500"
+                          : "text-red-500",
+                      )}
+                    >
+                      {formatCurrency(Number(transaction.amount))}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="size-8 p-0">
+                            <span className="sr-only">Abrir menu</span>
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Ações</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleEdit(transaction.id)}
+                          >
+                            <Pencil className="mr-2 size-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDeleteClick(transaction.id)}
+                            className="text-red-600"
+                          >
+                            <Trash2 className="mr-2 size-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Excluir transação</AlertDialogTitle>
             <AlertDialogDescription>
               Tem certeza que deseja excluir esta transação? Esta ação não pode
               ser desfeita.
@@ -272,51 +260,17 @@ export function TransactionsList() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-            >
+            <AlertDialogAction onClick={confirmDelete}>
               Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
       <TransactionSheet
         open={sheetOpen}
         onOpenChange={setSheetOpen}
-        isEditing={!!editingTransaction}
-        transaction={
-          editingTransaction
-            ? (() => {
-                const transaction = transactions.find(
-                  (t) => t.id === editingTransaction,
-                );
-
-                // Verificação de segurança
-                if (!transaction) {
-                  console.error(
-                    "Transação não encontrada:",
-                    editingTransaction,
-                  );
-                  return undefined;
-                }
-
-                console.log("Transação encontrada:", transaction);
-
-                const formattedTransaction = {
-                  ...transaction,
-                  amount: String(transaction.amount),
-                  date: transaction.date.split("T")[0],
-                  categoryId: transaction.categoryId,
-                  categories: transaction.categories,
-                };
-
-                console.log("Transação formatada:", formattedTransaction);
-
-                return formattedTransaction;
-              })()
-            : undefined
-        }
+        transactionId={editingTransaction}
       />
     </>
   );

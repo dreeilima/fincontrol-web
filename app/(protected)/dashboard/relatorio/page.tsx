@@ -14,7 +14,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 import { ExpensesByCategoryChart } from "@/components/reports/expenses-by-category-chart";
-import { IncomeVsExpensesChart } from "@/components/reports/income-vs-expenses-chart";
 import { MonthlyTrendsChart } from "@/components/reports/monthly-trends-chart";
 import { ReportFilters } from "@/components/reports/report-filters";
 import { ReportSummary } from "@/components/reports/report-summary";
@@ -32,17 +31,48 @@ export default function RelatoriosPage() {
 
         <ReportFilters />
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          <Suspense fallback={<Skeleton className="h-[120px] w-full" />}>
-            <ReportSummary />
-          </Suspense>
-        </div>
+        <Suspense fallback={<Skeleton className="h-[160px] w-full" />}>
+          <ReportSummary />
+        </Suspense>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:w-[600px]">
+        <Tabs defaultValue="trends" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 md:w-[400px]">
+            <TabsTrigger value="trends">Evolução Mensal</TabsTrigger>
             <TabsTrigger value="categories">Categorias</TabsTrigger>
-            <TabsTrigger value="trends">Tendências</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="trends" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Evolução Mensal</CardTitle>
+                <CardDescription>
+                  Acompanhe suas receitas, despesas e saldo ao longo dos meses
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                <Suspense fallback={<Skeleton className="size-full" />}>
+                  <MonthlyTrendsChart />
+                </Suspense>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="categories" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Gastos por Categoria</CardTitle>
+                <CardDescription>
+                  Analise como seus gastos estão distribuídos entre as
+                  categorias
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="h-[400px]">
+                <Suspense fallback={<Skeleton className="size-full" />}>
+                  <ExpensesByCategoryChart />
+                </Suspense>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </DashboardShell>

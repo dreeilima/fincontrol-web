@@ -17,7 +17,7 @@ export const registerSchema = z.object({
   phone: z
     .string()
     .min(1, "Telefone é obrigatório")
-    .regex(/^\d{11}$/, "Digite um telefone válido com DDD"),
+    .regex(/^55\d{10,11}$/, "Digite um número de telefone válido com DDD"),
   password: z
     .string()
     .min(1, "Senha é obrigatória")

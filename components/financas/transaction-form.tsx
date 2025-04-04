@@ -86,20 +86,25 @@ export function TransactionForm({
     ? categories.find((c) => c.id === form.watch("categoryId"))
     : null;
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true);
+
       const response = await fetch("/api/transactions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          ...data,
+          ...values,
           type,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error("Erro ao criar transação");
+        throw new Error(data.error || "Algo deu errado");
       }
 
       toast.success(
@@ -107,15 +112,16 @@ export function TransactionForm({
       );
 
       await refreshTransactions();
-      onSuccess?.();
-      form.reset();
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error) {
-      console.error(error);
-      toast.error("Erro ao criar transação");
+      toast.error(error instanceof Error ? error.message : "Algo deu errado");
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }
 
   return (
     <Form {...form}>

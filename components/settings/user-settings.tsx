@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserWithoutToken } from "@/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -22,9 +23,12 @@ import { Input } from "@/components/ui/input";
 import { DeleteAccountDialog } from "./delete-account-dialog";
 
 const profileFormSchema = z.object({
-  name: z.string().min(2, {
-    message: "O nome deve ter pelo menos 2 caracteres.",
-  }),
+  name: z
+    .string()
+    .min(2, {
+      message: "O nome deve ter pelo menos 2 caracteres.",
+    })
+    .transform((name) => name.trim()),
   email: z.string().email({
     message: "Por favor, insira um email válido.",
   }),
@@ -37,6 +41,7 @@ interface UserSettingsProps {
 }
 
 export function UserSettings({ user }: UserSettingsProps) {
+  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
 
   const form = useForm<ProfileFormValues>({
@@ -48,6 +53,12 @@ export function UserSettings({ user }: UserSettingsProps) {
   });
 
   async function onSubmit(data: ProfileFormValues) {
+    // Se nada mudou, não faz a requisição
+    if (data.name === user.name && data.email === user.email) {
+      toast.info("Nenhuma alteração foi feita.");
+      return;
+    }
+
     setIsPending(true);
 
     try {
@@ -58,14 +69,39 @@ export function UserSettings({ user }: UserSettingsProps) {
         },
         body: JSON.stringify({
           name: data.name,
+          email: data.email,
         }),
       });
 
-      if (!response.ok) throw new Error();
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Erro ao atualizar perfil");
+      }
 
       toast.success("Perfil atualizado com sucesso!");
+
+      // Se precisar reautenticar (email foi alterado)
+      if (result.requiresReauth) {
+        toast.info("Você será redirecionado para fazer login novamente.");
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
+        return;
+      }
+
+      // Atualiza os dados do formulário com os novos valores
+      form.reset({
+        name: result.name,
+        email: result.email,
+      });
+
+      // Força a atualização da página
+      router.refresh();
     } catch (error) {
-      toast.error("Erro ao atualizar perfil");
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao atualizar perfil",
+      );
     } finally {
       setIsPending(false);
     }
@@ -99,14 +135,11 @@ export function UserSettings({ user }: UserSettingsProps) {
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="seu.email@exemplo.com"
-                    {...field}
-                    disabled
-                  />
+                  <Input placeholder="seu.email@exemplo.com" {...field} />
                 </FormControl>
                 <FormDescription>
-                  Seu endereço de email (não pode ser alterado).
+                  Seu endereço de email. Ao alterar, você precisará fazer login
+                  novamente.
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -114,7 +147,10 @@ export function UserSettings({ user }: UserSettingsProps) {
           />
 
           <div className="flex items-center justify-between">
-            <Button type="submit" disabled={isPending}>
+            <Button
+              type="submit"
+              disabled={isPending || !form.formState.isDirty}
+            >
               {isPending ? "Salvando..." : "Salvar alterações"}
             </Button>
             <DeleteAccountDialog />

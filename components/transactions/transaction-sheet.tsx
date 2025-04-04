@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useTransactions } from "@/contexts/transactions-context";
+
 import { Transaction } from "@/types/transaction";
 import {
   Sheet,
@@ -13,22 +16,39 @@ import { TransactionForm } from "./transaction-form";
 interface TransactionSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  isEditing: boolean;
-  transaction?: Transaction;
+  transactionId: string | null;
 }
 
 export function TransactionSheet({
   open,
   onOpenChange,
-  isEditing,
-  transaction,
+  transactionId,
 }: TransactionSheetProps) {
+  const { transactions } = useTransactions();
+  const [transaction, setTransaction] = useState<Transaction | undefined>();
+
+  useEffect(() => {
+    if (transactionId) {
+      const foundTransaction = transactions.find((t) => t.id === transactionId);
+      if (foundTransaction) {
+        setTransaction({
+          ...foundTransaction,
+          amount: String(foundTransaction.amount),
+          date: foundTransaction.date.split("T")[0],
+          categoryId: foundTransaction.categoryId,
+        });
+      }
+    } else {
+      setTransaction(undefined);
+    }
+  }, [transactionId, transactions]);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-[540px]">
         <SheetHeader>
           <SheetTitle>
-            {isEditing ? "Editar Transação" : "Nova Transação"}
+            {transactionId ? "Editar Transação" : "Nova Transação"}
           </SheetTitle>
         </SheetHeader>
         <div className="mt-6">

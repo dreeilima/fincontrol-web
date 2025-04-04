@@ -1,17 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
-import { prisma } from "@/lib/prisma";
-
-const CATEGORY_COLORS = {
-  HOUSING: "#f97316",
-  FOOD: "#ef4444",
-  TRANSPORT: "#8b5cf6",
-  HEALTH: "#06b6d4",
-  LEISURE: "#22c55e",
-  EDUCATION: "#3b82f6",
-  OTHERS: "#6b7280",
-};
+import { db } from "@/lib/db";
 
 export async function GET(request: Request) {
   try {
@@ -32,7 +22,24 @@ export async function GET(request: Request) {
       );
     }
 
-    const transactions = await prisma.transactions.findMany({
+    // Busca todas as categorias do usuário
+    const categories = await db.categories.findMany({
+      where: {
+        user_id: session.user.id,
+      },
+      select: {
+        id: true,
+        name: true,
+        color: true,
+      },
+    });
+
+    // Cria um map de categorias para fácil acesso
+    const categoryMap = new Map(
+      categories.map((cat) => [cat.id, { name: cat.name, color: cat.color }]),
+    );
+
+    const transactions = await db.transactions.findMany({
       where: {
         date: {
           gte: new Date(startDate),
@@ -43,33 +50,48 @@ export async function GET(request: Request) {
       },
       select: {
         amount: true,
-        category: true,
+        categoryId: true,
       },
     });
 
+    // Calcula o total geral de despesas
+    const totalExpenses = transactions.reduce(
+      (total, t) => total + Math.abs(Number(t.amount)),
+      0,
+    );
+
     const categoryTotals = transactions.reduce(
       (acc, transaction) => {
-        const category = transaction.category || "OTHERS";
-        if (!acc[category]) {
-          acc[category] = 0;
+        const categoryId = transaction.categoryId || "uncategorized";
+        if (!acc[categoryId]) {
+          acc[categoryId] = 0;
         }
-        acc[category] += Number(transaction.amount);
+        acc[categoryId] += Math.abs(Number(transaction.amount));
         return acc;
       },
       {} as Record<string, number>,
     );
 
-    const chartData = Object.entries(categoryTotals).map(
-      ([category, value]) => ({
-        name: getCategoryName(category),
-        value,
-        color:
-          CATEGORY_COLORS[category as keyof typeof CATEGORY_COLORS] ||
-          CATEGORY_COLORS.OTHERS,
-      }),
-    );
+    const chartData = Object.entries(categoryTotals)
+      .map(([categoryId, value]) => {
+        const category = categoryMap.get(categoryId) || {
+          name: "Sem Categoria",
+          color: "#4A4E69",
+        };
+        return {
+          id: categoryId,
+          name: category.name,
+          value,
+          percentage: (value / totalExpenses) * 100,
+          color: category.color,
+        };
+      })
+      .sort((a, b) => b.value - a.value);
 
-    return NextResponse.json(chartData);
+    return NextResponse.json({
+      data: chartData,
+      total: totalExpenses,
+    });
   } catch (error) {
     console.error("Erro ao gerar dados do gráfico:", error);
     return NextResponse.json(
@@ -77,18 +99,4 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   }
-}
-
-function getCategoryName(category: string): string {
-  const categoryNames: Record<string, string> = {
-    HOUSING: "Moradia",
-    FOOD: "Alimentação",
-    TRANSPORT: "Transporte",
-    HEALTH: "Saúde",
-    LEISURE: "Lazer",
-    EDUCATION: "Educação",
-    OTHERS: "Outros",
-  };
-
-  return categoryNames[category] || "Outros";
 }

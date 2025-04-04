@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTransactions } from "@/contexts/transactions-context"; // Adicionar import
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -10,7 +10,7 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
-import { Transaction } from "@/types/transaction";
+import { Category, Transaction } from "@/types/transaction";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -98,6 +98,13 @@ export function TransactionForm({
           categoryId: "",
         },
   });
+
+  const [filteredCategories, setFilteredCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    const type = form.watch("type");
+    setFilteredCategories(categories.filter((cat) => cat.type === type));
+  }, [categories, form.watch("type")]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -224,7 +231,14 @@ export function TransactionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tipo</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
+              <Select
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  // Reseta a categoria quando o tipo muda
+                  form.setValue("categoryId", "");
+                }}
+                value={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione o tipo" />
@@ -246,20 +260,28 @@ export function TransactionForm({
           render={({ field }) => (
             <FormItem>
               <FormLabel>Categoria</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value}
+                disabled={!form.watch("type")}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {categories
-                    .filter((cat) => cat.type === form.getValues("type"))
-                    .map((category) => (
+                  {filteredCategories.length === 0 ? (
+                    <SelectItem value="no-categories" disabled>
+                      Nenhuma categoria disponível
+                    </SelectItem>
+                  ) : (
+                    filteredCategories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
                       </SelectItem>
-                    ))}
+                    ))
+                  )}
                 </SelectContent>
               </Select>
               <FormMessage />

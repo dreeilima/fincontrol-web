@@ -26,18 +26,6 @@ declare module "next-auth" {
       stripe_current_period_end: Date | null;
     };
   }
-
-  interface User {
-    id?: string;
-
-    image?: string | null;
-    role: UserRole;
-    phone: string | null;
-    stripe_customer_id: string | null;
-    stripe_subscription_id: string | null;
-    stripe_price_id: string | null;
-    stripe_current_period_end: Date | null;
-  }
 }
 
 declare module "next-auth/jwt" {
@@ -71,7 +59,7 @@ export const config = {
           stripe_price_id: user.stripe_price_id,
           stripe_current_period_end: user.stripe_current_period_end,
           image: null,
-        };
+        } as unknown as import("next-auth").User;
       },
     }),
   ],
@@ -112,7 +100,7 @@ export const config = {
   },
   session: { strategy: "jwt" },
   secret: process.env.NEXTAUTH_SECRET,
-} satisfies NextAuthConfig;
+} as NextAuthConfig;
 
 export const { auth, signIn, signOut } = NextAuth(config as any);
 

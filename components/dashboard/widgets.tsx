@@ -34,20 +34,60 @@ interface UserWidgets {
 export function DashboardWidgets() {
   const [widgets, setWidgets] = useState<UserWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: Buscar widgets do usuário da API
-    setWidgets({
-      layout: ["spending_chart", "quick_actions", "recent_transactions"],
-    });
-    setIsLoading(false);
+    async function loadWidgets() {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // TODO: No futuro, buscar widgets do usuário da API
+        // Por enquanto, usando layout padrão
+        setWidgets({
+          layout: ["spending_chart", "quick_actions", "recent_transactions"],
+        });
+      } catch (err) {
+        console.error("Erro ao carregar widgets:", err);
+        setError("Não foi possível carregar os widgets do dashboard");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadWidgets();
   }, []);
 
   if (isLoading) {
     return (
-      <div className="flex h-[200px] items-center justify-center">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" />
+      <div className="grid gap-4 md:grid-cols-2">
+        {Array(3)
+          .fill(0)
+          .map((_, index) => (
+            <Card
+              key={index}
+              className={cn(
+                "md:col-span-2 lg:col-span-1",
+                index === 2 && "lg:col-span-2",
+              )}
+            >
+              <CardHeader>
+                <div className="h-5 w-32 animate-pulse rounded-md bg-muted" />
+              </CardHeader>
+              <CardContent>
+                <div className="h-[200px] animate-pulse rounded-md bg-muted" />
+              </CardContent>
+            </Card>
+          ))}
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="p-6">
+        <div className="text-center text-muted-foreground">{error}</div>
+      </Card>
     );
   }
 
