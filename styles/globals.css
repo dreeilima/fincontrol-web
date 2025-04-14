@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 98%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --radius: 0.5rem;
+    
+    --chart-1: 271.5 81.3% 55.9%;
+    --chart-2: 270 95% 75%;
+    --chart-3: 270 91% 65%;
+    --chart-4: 269 97% 85%;
+    --chart-5: 269 100% 92%;
+  }
+
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 8%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+
+    --chart-1: 271.5 81.3% 55.9%;
+    --chart-2: 270 95% 75%;
+    --chart-3: 270 91% 65%;
+    --chart-4: 269 97% 85%;
+    --chart-5: 269 100% 92%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@layer utilities {
+  .step {
+    counter-increment: step;
+  }
+
+  .step:before {
+    @apply absolute w-9 h-9 bg-muted rounded-full font-mono font-medium text-center text-base inline-flex items-center justify-center -indent-px border-4 border-background;
+    @apply ml-[-50px] mt-[-4px];
+    content: counter(step);
+  }
+}
+
+.text-gradient_indigo-purple {
+  background: linear-gradient(90deg, #6366f1 0%, rgb(168 85 247 / 0.8) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.bg-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Estilos para o react-phone-input-2 */
+.react-tel-input .form-control {
+  width: 100% !important;
+  height: 40px !important;
+  padding: 8px 8px 8px 52px !important;
+  border: 1px solid hsl(var(--input)) !important;
+  border-radius: 6px !important;
+  background-color: transparent !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.react-tel-input .form-control:focus {
+  outline: none !important;
+  border-color: hsl(var(--input)) !important;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring)) !important;
+}
+
+.react-tel-input .flag-dropdown {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+.react-tel-input .selected-flag {
+  background-color: transparent !important;
+  border-radius: 6px 0 0 6px !important;
+}
+
+.react-tel-input .selected-flag:hover,
+.react-tel-input .selected-flag:focus {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.react-tel-input .country-list {
+  background-color: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 6px !important;
+  margin-top: 4px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.react-tel-input .country-list .country:hover,
+.react-tel-input .country-list .country.highlight {
+  background-color: hsl(var(--accent)) !important;
+}
+
+.react-tel-input .country-list .search-box {
+  background-color: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  font-size: 14px !important;
+  padding: 8px !important;
+}
+
+.react-tel-input .country-list .search-box:focus {
+  outline: none !important;
+}
+
+/* Ajustes para modo escuro */
+.dark .react-tel-input .form-control {
+  color: hsl(var(--foreground)) !important;
+}
+
+.dark .react-tel-input .country-list {
+  background-color: hsl(var(--background)) !important;
+  color: hsl(var(--foreground)) !important;
+}

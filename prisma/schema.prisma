@@ -1,0 +1,218 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model accounts {
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  created_at        DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime       @updatedAt @db.Timestamptz(6)
+  name              String
+  balance           Float          @default(0)
+  id                String         @id
+  userId            String
+  users             users          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      transactions[]
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model bank_accounts {
+  id           String         @id
+  user_id      String
+  name         String
+  balance      Decimal        @db.Decimal
+  type         String
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime       @updatedAt @db.Timestamptz(6)
+  users        users          @relation(fields: [user_id], references: [id])
+  transactions transactions[]
+}
+
+model categories {
+  id           String         @id
+  user_id      String
+  name         String
+  type         String
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  color        String?
+  icon         String?
+  is_default   Boolean        @default(false)  // Add this line
+  updated_at   DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  users        users          @relation(fields: [user_id], references: [id])
+  transactions transactions[]
+
+  @@unique([user_id, name, type])
+}
+
+model profiles {
+  id         String   @id
+  full_name  String
+  email      String
+  phone      String
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+  user       users    @relation(fields: [id], references: [id], onDelete: Cascade)
+}
+
+model sessions {
+  sessionToken String   @unique
+  expires      DateTime
+  id           String   @id
+  userId       String
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @updatedAt @db.Timestamptz(6)
+  users        users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model transactions {
+  id            String         @id
+  user_id       String
+  amount        Decimal        @db.Decimal(10, 2)
+  description   String?
+  category      String
+  type          String
+  date          DateTime       @db.Timestamptz(6)
+  created_at    DateTime       @default(now()) @db.Timestamptz(6)
+  bankAccountId String?
+  categoryId    String?
+  accountId     String?
+  updated_at    DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
+  accounts      accounts?      @relation(fields: [accountId], references: [id])
+  bank_accounts bank_accounts? @relation(fields: [bankAccountId], references: [id])
+  categories    categories?    @relation(fields: [categoryId], references: [id])
+  users         users          @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, date])
+  @@index([category])
+}
+
+model subscriptions {
+  id                        String    @id @default(uuid())
+  user_id                   String    @unique
+  stripe_customer_id        String?
+  stripe_subscription_id    String?
+  stripe_price_id          String?
+  stripe_current_period_end DateTime?
+  status                   String    @default("inactive")
+  plan                     String    @default("basic")    // Adicionando plano padrão como "basic"
+  price                    Float     @default(990)        // Adicionando preço padrão como 990 (R$ 9,90)
+  created_at               DateTime  @default(now())
+  updated_at               DateTime  @updatedAt
+  user                     users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model user_goals {
+  id                String   @id @default(uuid())
+  user_id          String   @unique
+  monthly_budget   Float    @default(0)
+  savings_goal     Float    @default(0)
+  savings_frequency String   @default("monthly")
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @updatedAt @db.Timestamptz(6)
+  user             users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model user_preferences {
+  id                    String   @id @default(uuid())
+  user_id              String   @unique
+  email_notifications  Boolean  @default(true)
+  marketing_emails     Boolean  @default(false)
+  transaction_alerts   Boolean  @default(true)
+  budget_alerts        Boolean  @default(true)
+  theme               String   @default("light")
+  language            String   @default("pt-BR")
+  created_at          DateTime @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime @updatedAt @db.Timestamptz(6)
+  user                users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+// Atualizar o modelo users para incluir a relação
+model users {
+  id                        String          @id @default(uuid())
+  name                      String
+  email                     String          @unique
+  password                  String
+  created_at                DateTime        @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime        @updatedAt @db.Timestamptz(6)
+  role                      UserRole        @default(USER)
+  avatar_url                String?
+  bio                       String?
+  company                   String?
+  website                   String?
+  location                  String?
+  notification_email        Boolean         @default(true)
+  notification_push         Boolean         @default(true)
+  theme                     String?
+  language                  String?
+  is_active                 Boolean         @default(true)
+  stripe_current_period_end DateTime?
+  stripe_customer_id        String?
+  stripe_price_id           String?
+  stripe_subscription_id    String?
+  emailNotifications        Boolean         @default(true)
+  marketingEmails           Boolean         @default(false)
+  phone                     String          @unique
+  accounts                  accounts[]
+  bank_accounts             bank_accounts[]
+  categories                categories[]
+  profile                   profiles?
+  sessions                  sessions[]
+  transactions              transactions[]
+  subscription             subscriptions?   // Adicionar esta linha
+  goals                     user_goals?
+  preferences               user_preferences?
+}
+
+model verification_tokens {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @updatedAt @db.Timestamptz(6)
+
+  @@unique([identifier, token])
+}
+
+model whatsapp_auth {
+  id          String   @id @default("whatsapp")
+  credentials String
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @db.Timestamptz(6)
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  CREDIT_CARD
+  INVESTMENT
+  CASH
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
