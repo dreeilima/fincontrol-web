@@ -145,6 +145,17 @@ model user_preferences {
   user                users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
+// Modelo para configurações de orçamento
+model budgetSettings {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  monthlyBudget Float    @default(5000)
+  savingsGoal   Float    @default(20)  // percentual
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @updatedAt @db.Timestamptz(6)
+  user          users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 // Atualizar o modelo users para incluir a relação
 model users {
   id                        String          @id @default(uuid())
@@ -177,9 +188,10 @@ model users {
   profile                   profiles?
   sessions                  sessions[]
   transactions              transactions[]
-  subscription             subscriptions?   // Adicionar esta linha
+  subscription              subscriptions?
   goals                     user_goals?
   preferences               user_preferences?
+  budgetSettings            budgetSettings?
 }
 
 model verification_tokens {

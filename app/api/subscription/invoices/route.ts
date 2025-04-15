@@ -20,6 +20,13 @@ export async function GET() {
       return new NextResponse("Assinatura não encontrada", { status: 404 });
     }
 
+    if (!subscription.stripe_subscription_id) {
+      console.log(
+        "[SUBSCRIPTION_INVOICES_INFO] Assinatura gratuita sem faturas",
+      );
+      return NextResponse.json([]);
+    }
+
     const invoices = await stripe.invoices.list({
       subscription: subscription.stripe_subscription_id as string,
     });

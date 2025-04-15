@@ -22,6 +22,23 @@ const nextConfig = {
       },
     ],
   },
+  async headers() {
+    return [
+      {
+        source: "/site.webmanifest",
+        headers: [
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET, OPTIONS",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type",
+          },
+        ],
+      },
+    ];
+  },
   experimental: {
     serverComponentsExternalPackages: ["@prisma/client"],
     // Adicionar opção para melhorar compatibilidade com Prisma

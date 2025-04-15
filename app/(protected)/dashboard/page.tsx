@@ -1,10 +1,12 @@
 import { Suspense } from "react";
 
 import { constructMetadata } from "@/lib/utils";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BudgetProgress } from "@/components/dashboard/budget-progress";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardMetrics } from "@/components/dashboard/metrics";
+import { QuickActions } from "@/components/dashboard/quick-actions";
 import { DashboardShell } from "@/components/dashboard/shell";
 import { DashboardWidgets } from "@/components/dashboard/widgets";
 
@@ -20,15 +22,27 @@ export default function DashboardPage() {
         <DashboardHeader />
         <DashboardMetrics />
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="md:col-span-1">
-            <Suspense fallback={<Skeleton className="h-[200px] w-full" />}>
+        <div className="grid gap-4 md:grid-cols-12">
+          <div className="md:col-span-6">
+            <Suspense fallback={<Skeleton className="h-[250px] w-full" />}>
               <BudgetProgress />
             </Suspense>
           </div>
-          <div className="md:col-span-2">
-            <DashboardWidgets />
+
+          <div className="md:col-span-6">
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Ações Rápidas</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <QuickActions />
+              </CardContent>
+            </Card>
           </div>
+        </div>
+
+        <div className="w-full">
+          <DashboardWidgets displayQuickActions={false} />
         </div>
       </div>
     </DashboardShell>

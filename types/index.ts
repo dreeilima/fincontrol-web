@@ -37,7 +37,6 @@ export interface UserSubscriptionPlan extends SubscriptionPlan {
 export interface PlansRow {
   feature: string;
   basico: string | null;
-  pro: string | null;
   premium: string | null;
   tooltip?: string;
 }
@@ -76,4 +75,16 @@ export interface FeatureLdg {
   icon: keyof typeof Icons;
 }
 
-export type UserWithoutToken = Omit<NextAuthUser, "token">;
+export type UserWithoutToken = Omit<NextAuthUser, "token"> & {
+  id: string;
+  name: string;
+  email: string;
+  role: "admin" | "user";
+  phone: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_price_id: string | null;
+  stripe_current_period_end: Date | null;
+  image?: string | null;
+  avatar_url?: string | null;
+};

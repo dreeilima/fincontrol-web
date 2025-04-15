@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 import { stripe } from "@/lib/stripe";
+import { absoluteUrl } from "@/lib/utils";
 
 export async function POST(req: Request) {
   try {
@@ -18,8 +19,8 @@ export async function POST(req: Request) {
     }
 
     const stripeSession = await stripe.checkout.sessions.create({
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/assinatura?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/assinatura?canceled=true`,
+      success_url: absoluteUrl("/dashboard/assinatura?success=true"),
+      cancel_url: absoluteUrl("/dashboard/assinatura?canceled=true"),
       customer_email: session.user.email!,
       mode: "subscription",
       billing_address_collection: "auto",

@@ -22,30 +22,26 @@ interface PricingCardsProps {
 }
 
 export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
-  const isYearlyDefault =
-    !subscriptionPlan?.stripeCustomerId ||
-    subscriptionPlan.stripePriceId?.includes("yearly")
-      ? true
-      : false;
-  const [isYearly, setIsYearly] = useState<boolean>(!!isYearlyDefault);
   const { setShowSignInModal } = useContext(ModalContext);
   const router = useRouter();
-
-  const toggleBilling = () => {
-    setIsYearly(!isYearly);
-  };
+  // Removed yearly/monthly toggle - using only monthly pricing
 
   const PricingCard = ({ offer }: { offer: SubscriptionPlan }) => {
     return (
       <div
         className={cn(
           "relative flex flex-col overflow-hidden rounded-3xl border shadow-sm",
-          offer.title.toLocaleLowerCase() === "pro"
-            ? "-m-0.5 border-2 border-green-500"
+          offer.title.toLocaleLowerCase() === "premium"
+            ? "-m-0.5 transform border-2 border-green-500 shadow-lg transition-transform duration-300 hover:scale-105"
             : "",
         )}
         key={offer.title}
       >
+        {offer.title.toLowerCase() === "premium" && (
+          <div className="absolute right-4 top-4 rounded-md bg-green-500 px-3 py-1 text-xs font-bold text-white shadow-md">
+            RECOMENDADO
+          </div>
+        )}
         <div className="min-h-[150px] items-start space-y-4 bg-muted/50 p-6">
           <p className="flex font-urban text-sm font-bold uppercase tracking-wider text-muted-foreground">
             {offer.title}
@@ -54,16 +50,7 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
           <div className="flex flex-row">
             <div className="flex items-end">
               <div className="flex whitespace-nowrap text-left text-3xl font-semibold leading-6">
-                {isYearly ? (
-                  <>
-                    <span className="mr-2 text-muted-foreground/80 line-through">
-                      R$ {offer.price.monthly.toFixed(2)}
-                    </span>
-                    <span>R$ {(offer.price.yearly / 12).toFixed(2)}</span>
-                  </>
-                ) : (
-                  `R$ ${offer.price.monthly.toFixed(2)}`
-                )}
+                {`R$ ${offer.price.monthly.toFixed(2)}`}
               </div>
               <div className="-mb-1 ml-2 text-left text-sm font-medium text-muted-foreground">
                 <div>/mês</div>
@@ -72,9 +59,7 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
           </div>
           {offer.price.monthly > 0 && (
             <div className="text-left text-sm text-muted-foreground">
-              {isYearly
-                ? `R$ ${offer.price.yearly.toFixed(2)} cobrado anualmente`
-                : "cobrado mensalmente"}
+              cobrado mensalmente
             </div>
           )}
         </div>
@@ -116,7 +101,7 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
               </Link>
             ) : (
               <BillingFormButton
-                year={isYearly}
+                year={false}
                 offer={offer}
                 subscriptionPlan={subscriptionPlan}
               />
@@ -125,8 +110,8 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
             <Button
               className={cn(
                 "w-full",
-                offer.title.toLowerCase() === "pro"
-                  ? "bg-green-500 hover:bg-green-600"
+                offer.title.toLowerCase() === "premium"
+                  ? "bg-green-500 text-lg font-bold hover:bg-green-600"
                   : "",
               )}
               rounded="full"
@@ -145,35 +130,15 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
   return (
     <MaxWidthWrapper>
       <section className="flex flex-col items-center text-center">
-        <HeaderSection label="Preço" title="Comece a usar em poucos cliques!" />
+        <HeaderSection
+          label="Preço"
+          title="Escolha o plano ideal para você"
+          subtitle="Planos mensais simples e transparentes para controlar suas finanças"
+        />
 
-        <div className="mb-4 mt-10 flex items-center gap-5">
-          <ToggleGroup
-            type="single"
-            size="sm"
-            defaultValue={isYearly ? "yearly" : "monthly"}
-            onValueChange={toggleBilling}
-            aria-label="toggle-year"
-            className="h-9 overflow-hidden rounded-full border bg-background p-1 *:h-7 *:text-muted-foreground"
-          >
-            <ToggleGroupItem
-              value="yearly"
-              className="rounded-full px-5 data-[state=on]:!bg-primary data-[state=on]:!text-primary-foreground"
-              aria-label="Toggle yearly billing"
-            >
-              Anual (-20%)
-            </ToggleGroupItem>
-            <ToggleGroupItem
-              value="monthly"
-              className="rounded-full px-5 data-[state=on]:!bg-primary data-[state=on]:!text-primary-foreground"
-              aria-label="Toggle monthly billing"
-            >
-              Mensal
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
+        {/* Removed yearly/monthly toggle - using only monthly pricing */}
 
-        <div className="grid gap-5 bg-inherit py-5 lg:grid-cols-3">
+        <div className="mx-auto grid max-w-4xl gap-8 bg-inherit py-8 md:grid-cols-2">
           {pricingData.map((offer) => (
             <PricingCard offer={offer} key={offer.title} />
           ))}

@@ -29,22 +29,22 @@ type NotificationFormValues = z.infer<typeof notificationFormSchema>;
 
 const NOTIFICATIONS = [
   {
-    id: "emailNotifications",
+    id: "email_notifications",
     label: "Notificações por Email",
     description: "Receba emails sobre sua atividade financeira.",
   },
   {
-    id: "marketingEmails",
+    id: "marketing_emails",
     label: "Emails de Marketing",
     description: "Receba emails sobre novos recursos e ofertas.",
   },
   {
-    id: "transactionAlerts",
+    id: "transaction_alerts",
     label: "Alertas de Transações",
     description: "Seja notificado sobre novas transações.",
   },
   {
-    id: "budgetAlerts",
+    id: "budget_alerts",
     label: "Alertas de Orçamento",
     description:
       "Seja notificado quando se aproximar dos limites de orçamento.",
@@ -68,6 +68,7 @@ interface NotificationSettingsProps {
 
 export function NotificationSettings({ user }: NotificationSettingsProps) {
   const [isPending, setIsPending] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const form = useForm<NotificationFormValues>({
     resolver: zodResolver(notificationFormSchema),
@@ -81,10 +82,14 @@ export function NotificationSettings({ user }: NotificationSettingsProps) {
 
   useEffect(() => {
     const loadPreferences = async () => {
+      setIsLoading(true);
       try {
         const response = await fetch("/api/user/preferences");
         if (!response.ok) throw new Error("Falha ao carregar preferências");
         const data = await response.json();
+
+        console.log("Dados carregados da API:", data);
+
         form.reset({
           email_notifications: data.email_notifications,
           marketing_emails: data.marketing_emails,
@@ -94,6 +99,8 @@ export function NotificationSettings({ user }: NotificationSettingsProps) {
       } catch (error) {
         console.error("Erro ao carregar preferências:", error);
         toast.error("Não foi possível carregar suas preferências");
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -104,6 +111,8 @@ export function NotificationSettings({ user }: NotificationSettingsProps) {
     setIsPending(true);
 
     try {
+      console.log("Enviando dados para a API:", data);
+
       const response = await fetch("/api/user/preferences", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -112,13 +121,51 @@ export function NotificationSettings({ user }: NotificationSettingsProps) {
 
       if (!response.ok) throw new Error("Falha ao atualizar preferências");
 
+      const responseData = await response.json();
+      console.log("Resposta da API:", responseData);
+
       toast.success("Preferências de notificação atualizadas");
+
+      // Recarregar as preferências após salvar
+      const refreshResponse = await fetch("/api/user/preferences");
+      if (refreshResponse.ok) {
+        const refreshedData = await refreshResponse.json();
+        console.log("Dados recarregados após salvar:", refreshedData);
+
+        form.reset({
+          email_notifications: refreshedData.email_notifications,
+          marketing_emails: refreshedData.marketing_emails,
+          transaction_alerts: refreshedData.transaction_alerts,
+          budget_alerts: refreshedData.budget_alerts,
+        });
+      }
     } catch (error) {
       console.error("Erro ao atualizar preferências:", error);
       toast.error("Não foi possível atualizar suas preferências");
     } finally {
       setIsPending(false);
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="animate-pulse space-y-3">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="flex flex-row items-center justify-between rounded-lg border p-4"
+            >
+              <div className="space-y-2">
+                <div className="h-4 w-32 rounded bg-muted"></div>
+                <div className="h-3 w-64 rounded bg-muted"></div>
+              </div>
+              <div className="h-6 w-10 rounded bg-muted"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (

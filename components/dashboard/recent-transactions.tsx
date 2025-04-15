@@ -75,7 +75,7 @@ export function RecentTransactions() {
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
           );
         })
-        .slice(0, 5); // Mantém apenas as 5 mais recentes
+        .slice(0, 8); // Aumentando de 5 para 8 transações exibidas
 
       return filtered;
     } catch (error) {

@@ -14,6 +14,7 @@ interface SpendingData {
   categoryName: string;
   amount: number;
   color: string;
+  icon: string;
 }
 
 export function SpendingChart() {
@@ -31,7 +32,7 @@ export function SpendingChart() {
 
     // Agrupa transações por categoria normalizada
     const spending = filteredTransactions.reduce<
-      Record<string, { amount: number; color: string | null }>
+      Record<string, { amount: number; color: string | null; icon: string }>
     >((acc, transaction) => {
       if (transaction.type === "EXPENSE") {
         const category = categories.find(
@@ -48,6 +49,7 @@ export function SpendingChart() {
           acc[categoryName] = {
             amount: 0,
             color: category?.color || "#64f296",
+            icon: category?.icon || "💰",
           };
         }
         acc[categoryName].amount += Number(transaction.amount);
@@ -71,15 +73,16 @@ export function SpendingChart() {
           categoryName,
           amount: data.amount,
           color: data.color || "#64f296",
+          icon: data.icon || "💰",
         };
       })
       .sort((a, b) => b.amount - a.amount);
 
-    // Pega as 6 maiores categorias
-    const topCategories = allCategories.slice(0, 6);
+    // Pega as 8 maiores categorias (aumentando de 6 para 8)
+    const topCategories = allCategories.slice(0, 8);
 
     // Agrupa o resto em "Outros"
-    const otherCategories = allCategories.slice(6);
+    const otherCategories = allCategories.slice(8);
     if (otherCategories.length > 0) {
       const othersAmount = otherCategories.reduce(
         (acc, item) => acc + item.amount,
@@ -89,6 +92,7 @@ export function SpendingChart() {
         categoryName: "Outros",
         amount: othersAmount,
         color: "#6b7280", // Cor cinza para "Outros"
+        icon: "💰",
       });
     }
 
@@ -96,7 +100,7 @@ export function SpendingChart() {
   }, [transactions, categories]);
 
   if (isLoading) {
-    return <div className="h-[250px] animate-pulse bg-muted" />;
+    return <div className="h-[300px] animate-pulse bg-muted" />;
   }
 
   const total = spendingData.reduce((acc, item) => acc + item.amount, 0);
@@ -114,6 +118,7 @@ export function SpendingChart() {
 
   const options = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         display: false,
@@ -131,27 +136,35 @@ export function SpendingChart() {
   };
 
   return (
-    <div className="flex gap-8">
-      <div className="relative h-[250px] flex-1">
+    <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="relative h-[300px] w-full lg:w-1/2">
         <Doughnut data={chartData} options={options} />
       </div>
-      <div className="flex w-[200px] flex-col gap-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:w-1/2 lg:grid-cols-2">
         {spendingData.map((item) => {
           const percentage = ((item.amount / total) * 100).toFixed(1);
           return (
-            <div key={item.categoryName} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div
-                    className="size-3 rounded-full"
-                    style={{ backgroundColor: item.color }}
-                  />
-                  <span className="font-medium">{item.categoryName}</span>
-                </div>
-                <span>{percentage}%</span>
+            <div
+              key={item.categoryName}
+              className="flex flex-col gap-1 rounded-lg p-3"
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="size-3 rounded-full"
+                  style={{ backgroundColor: item.color }}
+                />
+                <span className="truncate text-sm font-medium">
+                  {item.categoryName}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {item.icon}
+                </span>
               </div>
-              <div className="text-sm text-muted-foreground">
+              <div className="mt-1 text-sm font-semibold">
                 {formatCurrency(item.amount)}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {percentage}% do total
               </div>
             </div>
           );

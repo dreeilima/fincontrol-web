@@ -80,7 +80,19 @@ export function formatDate(input: string | number): string {
 }
 
 export function absoluteUrl(path: string) {
-  return `${env.NEXT_PUBLIC_APP_URL}${path}`;
+  // Verifica se está em ambiente de desenvolvimento
+  const isDevelopment = process.env.NODE_ENV === "development";
+  let baseUrl = isDevelopment
+    ? env.NEXT_PUBLIC_APP_URL_DEV || env.NEXT_PUBLIC_APP_URL
+    : env.NEXT_PUBLIC_APP_URL;
+
+  // Remove barra final da baseUrl se existir
+  baseUrl = baseUrl.endsWith("/") ? baseUrl.slice(0, -1) : baseUrl;
+
+  // Adiciona barra inicial ao path se não existir
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  return `${baseUrl}${normalizedPath}`;
 }
 
 // Utils from precedent.dev

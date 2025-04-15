@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { LayoutDashboard, Lock, LogOut, Settings } from "lucide-react";
+import { useUser } from "@/contexts/user-context";
+import { UserWithoutToken } from "@/types";
+import { LayoutDashboard, Lock, LogOut, Settings, User } from "lucide-react";
 import { signOut, useSession } from "next-auth/react";
 import { Drawer } from "vaul";
 
@@ -18,9 +20,21 @@ import { UserAvatar } from "@/components/shared/user-avatar";
 
 export function UserAccountNav() {
   const { data: session } = useSession();
-  const user = session?.user;
+  const { userData } = useUser();
+  // Preferir dados do contexto, depois da sessão
+  const user = (userData || session?.user) as UserWithoutToken;
   const { isMobile } = useMediaQuery();
   const [open, setOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string>("");
+  const [displayEmail, setDisplayEmail] = useState<string>("");
+
+  // Atualize o estado apenas quando os dados do usuário mudarem
+  useEffect(() => {
+    if (user) {
+      setDisplayName(user.name || "");
+      setDisplayEmail(user.email || "");
+    }
+  }, [user]);
 
   if (!user) {
     return (
@@ -40,14 +54,7 @@ export function UserAccountNav() {
           <span className="text-sm">Admin</span>
         </Link>
       )}
-      <Link
-        href="/dashboard"
-        className="flex w-full items-center gap-3 px-2.5 py-2 text-foreground hover:bg-muted"
-        onClick={() => setOpen(false)}
-      >
-        <LayoutDashboard className="size-4" />
-        <span className="text-sm">Dashboard</span>
-      </Link>
+
       <Link
         href="/dashboard/configuracao"
         className="flex w-full items-center gap-3 px-2.5 py-2 text-foreground hover:bg-muted"
@@ -70,13 +77,13 @@ export function UserAccountNav() {
     return (
       <Drawer.Root open={open} onClose={() => setOpen(false)}>
         <Drawer.Trigger asChild onClick={() => setOpen(true)}>
-          <button>
+          <button className="transition-transform hover:scale-105 active:scale-95">
             <UserAvatar
               user={{
-                name: user.name ?? "",
-                avatar_url: user.image ?? null,
+                name: displayName,
+                avatar_url: user.avatar_url || user.image || null,
               }}
-              className="size-9 border"
+              className="size-9 border shadow-sm"
             />
           </button>
         </Drawer.Trigger>
@@ -85,11 +92,18 @@ export function UserAccountNav() {
           <Drawer.Content className="fixed inset-x-0 bottom-0 z-50 mt-24 rounded-t-[10px] border bg-background p-6">
             <div className="flex flex-col space-y-4">
               <div className="flex items-center gap-2">
+                <UserAvatar
+                  user={{
+                    name: displayName,
+                    avatar_url: user.avatar_url || user.image || null,
+                  }}
+                  className="size-10 border shadow-sm"
+                />
                 <div className="flex flex-col">
-                  {user.name && <p className="font-medium">{user.name}</p>}
-                  {user.email && (
+                  {displayName && <p className="font-medium">{displayName}</p>}
+                  {displayEmail && (
                     <p className="w-[200px] truncate text-muted-foreground">
-                      {user.email}
+                      {displayEmail}
                     </p>
                   )}
                 </div>
@@ -105,23 +119,30 @@ export function UserAccountNav() {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button>
+        <button className="transition-transform hover:scale-105 active:scale-95">
           <UserAvatar
             user={{
-              name: user.name ?? "",
-              avatar_url: user.image ?? null,
+              name: displayName,
+              avatar_url: user.avatar_url || user.image || null,
             }}
-            className="size-8 border"
+            className="size-8 border shadow-sm"
           />
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <div className="flex items-center gap-2 p-2">
+          <UserAvatar
+            user={{
+              name: displayName,
+              avatar_url: user.avatar_url || user.image || null,
+            }}
+            className="size-8 border shadow-sm"
+          />
           <div className="flex flex-col space-y-1">
-            {user.name && <p className="font-medium">{user.name}</p>}
-            {user.email && (
+            {displayName && <p className="font-medium">{displayName}</p>}
+            {displayEmail && (
               <p className="truncate text-sm text-muted-foreground">
-                {user.email}
+                {displayEmail}
               </p>
             )}
           </div>

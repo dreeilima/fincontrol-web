@@ -1,8 +1,8 @@
-import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 
 import { stripe } from "@/lib/stripe";
+import { absoluteUrl } from "@/lib/utils";
 
 export async function POST(req: Request) {
   try {
@@ -12,15 +12,14 @@ export async function POST(req: Request) {
     }
 
     const { priceId } = await req.json();
-    const origin = headers().get("origin") || process.env.NEXT_PUBLIC_APP_URL;
 
     const stripeSession = await stripe.checkout.sessions.create({
       customer: session.user.stripe_customer_id!,
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${origin}/onboarding?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${origin}/pricing?canceled=true`,
+      success_url: absoluteUrl(`/onboarding?session_id={CHECKOUT_SESSION_ID}`),
+      cancel_url: absoluteUrl(`/pricing?canceled=true`),
       metadata: {
         userId: session.user.id,
       },

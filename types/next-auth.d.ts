@@ -12,6 +12,7 @@ declare module "next-auth" {
     stripe_price_id: string | null;
     stripe_current_period_end: Date | null;
     image: string | null;
+    avatar_url: string | null;
     token: string;
   }
 

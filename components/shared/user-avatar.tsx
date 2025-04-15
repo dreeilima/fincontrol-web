@@ -9,6 +9,17 @@ interface UserAvatarProps extends AvatarProps {
 }
 
 export function UserAvatar({ user, ...props }: UserAvatarProps) {
+  // Função para gerar as iniciais do nome do usuário
+  const getInitials = (name: string) => {
+    if (!name) return "";
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+  };
+
   return (
     <Avatar {...props}>
       {user.avatar_url ? (
@@ -19,8 +30,14 @@ export function UserAvatar({ user, ...props }: UserAvatarProps) {
         />
       ) : (
         <AvatarFallback>
-          <span className="sr-only">{user.name}</span>
-          <Icons.user className="size-4" />
+          {user.name ? (
+            getInitials(user.name)
+          ) : (
+            <>
+              <span className="sr-only">Usuário</span>
+              <Icons.user className="size-4" />
+            </>
+          )}
         </AvatarFallback>
       )}
     </Avatar>

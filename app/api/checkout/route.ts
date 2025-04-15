@@ -5,6 +5,7 @@ import Stripe from "stripe";
 import { PLANS } from "@/config/subscriptions";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
+import { absoluteUrl } from "@/lib/utils";
 
 export async function POST(req: Request) {
   try {
@@ -77,9 +78,11 @@ export async function POST(req: Request) {
       where: { user_id: session.user.id },
     });
 
-    // Simplificar o fluxo redirecionando diretamente para o dashboard
-    // Modificar a URL de sucesso para incluir o session_id
-    const successUrl = `${process.env.NEXT_PUBLIC_APP_URL}/onboarding?session_id={CHECKOUT_SESSION_ID}`;
+    // Usar absoluteUrl para gerar as URLs de redirecionamento
+    const successUrl = absoluteUrl(
+      `/onboarding?session_id={CHECKOUT_SESSION_ID}`,
+    );
+    const cancelUrl = absoluteUrl(`/pricing`);
 
     const stripeSession = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -92,7 +95,7 @@ export async function POST(req: Request) {
         },
       ],
       success_url: successUrl,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pricing`,
+      cancel_url: cancelUrl,
       metadata: {
         userId: session.user.id,
       },

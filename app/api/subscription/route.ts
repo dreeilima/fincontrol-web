@@ -8,44 +8,34 @@ interface PlanType {
   id: string | undefined;
   name: string;
   price_amount: number;
-  stripe_price_id: string; // Add this field
+  stripe_price_id: string;
   features: string[];
 }
 
+// Novo sistema com apenas dois planos: Básico (gratuito) e Premium (pago)
 const PLANS = {
   basic: {
-    id: "price_1R06P8R9fFzxPkKldIyMcLC2",
+    id: undefined, // Plano gratuito, não tem ID no Stripe
     name: "Básico",
-    price_amount: 990,
-    stripe_price_id: "price_1R06P8R9fFzxPkKldIyMcLC2",
+    price_amount: 0,
+    stripe_price_id: "",
     features: [
-      "Controle financeiro básico",
-      "Até 100 transações/mês",
-      "Relatórios básicos",
-    ],
-  },
-  pro: {
-    id: "price_1R06Q3R9fFzxPkKlHN5yFNd6",
-    name: "Pro",
-    price_amount: 1990,
-    stripe_price_id: "price_1R06Q3R9fFzxPkKlHN5yFNd6",
-    features: [
-      "Controle financeiro avançado",
-      "Transações ilimitadas",
-      "Relatórios avançados",
-      "Suporte prioritário",
+      "Sistema web com gráficos interativos e gestão financeira",
+      "Controle de gastos via WhatsApp por texto, áudio e imagem",
+      "Até 10 transações por mês via WhatsApp",
+      "Categorização automática",
+      "Relatórios com gráficos mensais",
     ],
   },
   premium: {
-    id: "price_1R06RrR9fFzxPkKlvtrHmggX",
+    id: "price_1R06Q3R9fFzxPkKlHN5yFNd6", // Usar o ID do plano Premium existente ou criar um novo
     name: "Premium",
-    price_amount: 3990,
-    stripe_price_id: "price_1R06RrR9fFzxPkKlvtrHmggX",
+    price_amount: 1990, // R$ 19,90
+    stripe_price_id: "price_1R06Q3R9fFzxPkKlHN5yFNd6", // Usar o mesmo do plano premium existente
     features: [
-      "Tudo do Profissional",
-      "API de integração",
-      "Equipe ilimitada",
-      "Suporte 24/7",
+      "Todos os recursos do plano Básico",
+      "Transações ilimitadas de gastos via WhatsApp",
+      "Criação de categorias personalizadas para melhor organização",
     ],
   },
 };
@@ -58,67 +48,96 @@ export async function GET() {
       return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
     }
 
-    const subscription = await db.subscriptions.findUnique({
+    // Buscar assinatura do usuário
+    let subscription = await db.subscriptions.findUnique({
       where: { user_id: session.user.id },
     });
 
+    // Se não tiver assinatura, criar uma assinatura básica gratuita
     if (!subscription) {
-      return NextResponse.json(
-        { error: "Assinatura não encontrada" },
-        { status: 404 },
-      );
+      // Criar uma assinatura gratuita básica
+      subscription = await db.subscriptions.create({
+        data: {
+          user_id: session.user.id,
+          plan: "basic", // Mudando de "free" para "basic"
+          status: "active",
+          price: 0,
+        },
+      });
+
+      // Retornar assinatura gratuita com informações básicas
+      return NextResponse.json({
+        ...subscription,
+        plan: "basic",
+        price_amount: 0,
+        current_plan: "Básico",
+        next_plans: [PLANS.premium], // Apenas o plano premium como upgrade
+      });
     }
 
-    const stripeSubscription = await stripe.subscriptions.retrieve(
-      subscription.stripe_subscription_id as string,
-    );
+    // Para assinaturas pagas, continuar com o fluxo normal
+    if (subscription.stripe_subscription_id) {
+      try {
+        const stripeSubscription = await stripe.subscriptions.retrieve(
+          subscription.stripe_subscription_id as string,
+        );
 
-    // Get current price ID and amount from Stripe
-    const currentPriceId = stripeSubscription.items.data[0].price.id;
-    const currentAmount =
-      stripeSubscription.items.data[0].price.unit_amount || 0; // Add default value
+        // Get current price ID from Stripe
+        const currentPriceId = stripeSubscription.items.data[0].price.id;
+        const currentAmount =
+          stripeSubscription.items.data[0].price.unit_amount || 0;
 
-    // Find current plan key by actual Stripe price ID
-    const currentPlanKey =
-      Object.keys(PLANS).find((key) => PLANS[key].id === currentPriceId) ||
-      "basic";
+        // Verificar se o plano atual é premium
+        const isPremium = currentPriceId === PLANS.premium.id;
+        const currentPlanKey = isPremium ? "premium" : "basic";
 
-    // Get next available plans based on price amount
-    let next_plans: PlanType[] = [];
-    const currentPlan = PLANS[currentPlanKey];
+        // No novo sistema, só existe upgrade de básico para premium
+        let next_plans: PlanType[] = [];
+        if (currentPlanKey === "basic") {
+          next_plans = [PLANS.premium];
+        }
 
-    // Sort plans by price amount to determine upgrade path
-    const sortedPlans = Object.values(PLANS).sort(
-      (a, b) => a.price_amount - b.price_amount,
-    );
-    const currentPlanIndex = sortedPlans.findIndex(
-      (plan) => plan.id === currentPriceId,
-    );
+        // Update subscription in database with correct plan
+        await db.subscriptions.update({
+          where: { id: subscription.id },
+          data: {
+            plan: currentPlanKey,
+            stripe_price_id: currentPriceId,
+            price: currentAmount as number,
+          },
+        });
 
-    if (currentPlanIndex !== -1 && currentPlanIndex < sortedPlans.length - 1) {
-      next_plans = sortedPlans.slice(currentPlanIndex + 1);
-    }
+        return NextResponse.json({
+          ...subscription,
+          plan: currentPlanKey,
+          price_amount: currentAmount,
+          current_plan: PLANS[currentPlanKey].name,
+          next_plans: next_plans,
+        });
+      } catch (error) {
+        console.error("[STRIPE_SUBSCRIPTION_ERROR]", error);
+        // Tratar como plano básico em caso de erro
+        return NextResponse.json({
+          ...subscription,
+          plan: "basic",
+          price_amount: 0,
+          current_plan: "Básico",
+          next_plans: [PLANS.premium],
+        });
+      }
+    } else {
+      // Para assinaturas sem ID do Stripe (criadas manualmente ou gratuitas)
+      // Considerar como plano básico
+      const currentPlanKey = "basic";
 
-    // Update subscription in database with correct plan
-    await db.subscriptions.update({
-      where: { id: subscription.id },
-      data: {
+      return NextResponse.json({
+        ...subscription,
         plan: currentPlanKey,
-        stripe_price_id: currentPriceId,
-        price: currentAmount as number, // Type assertion to ensure it's a number
-      },
-    });
-
-    return NextResponse.json({
-      ...subscription,
-      plan: currentPlanKey,
-      price_amount: currentAmount,
-      current_plan: PLANS[currentPlanKey].name,
-      next_plans: next_plans.map((plan) => ({
-        ...plan,
-        id: plan.id,
-      })),
-    });
+        price_amount: 0,
+        current_plan: "Básico",
+        next_plans: [PLANS.premium],
+      });
+    }
   } catch (error) {
     console.error("[SUBSCRIPTION_GET_ERROR]", error);
     return NextResponse.json(

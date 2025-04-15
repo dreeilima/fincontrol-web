@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff } from "lucide-react";
 import { User } from "next-auth";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -54,6 +55,9 @@ interface SecuritySettingsProps {
 
 export function SecuritySettings({ user }: SecuritySettingsProps) {
   const [isPending, setIsPending] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const form = useForm<SecurityFormValues>({
     resolver: zodResolver(securityFormSchema),
@@ -98,7 +102,10 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="max-w-md space-y-8"
+      >
         <FormField
           control={form.control}
           name="current_password"
@@ -106,7 +113,26 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
             <FormItem>
               <FormLabel>Senha Atual</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <div className="relative">
+                  <Input
+                    type={showCurrentPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showCurrentPassword ? "Ocultar senha" : "Mostrar senha"}
+                    </span>
+                  </button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -119,7 +145,26 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
             <FormItem>
               <FormLabel>Nova Senha</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showNewPassword ? "Ocultar senha" : "Mostrar senha"}
+                    </span>
+                  </button>
+                </div>
               </FormControl>
               <FormDescription>
                 A senha deve ter pelo menos 8 caracteres, incluindo uma letra
@@ -136,7 +181,26 @@ export function SecuritySettings({ user }: SecuritySettingsProps) {
             <FormItem>
               <FormLabel>Confirmar Nova Senha</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    {...field}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                    <span className="sr-only">
+                      {showConfirmPassword ? "Ocultar senha" : "Mostrar senha"}
+                    </span>
+                  </button>
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>

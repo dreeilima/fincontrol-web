@@ -31,7 +31,13 @@ interface UserWidgets {
   layout: WidgetKey[];
 }
 
-export function DashboardWidgets() {
+interface DashboardWidgetsProps {
+  displayQuickActions?: boolean;
+}
+
+export function DashboardWidgets({
+  displayQuickActions = true,
+}: DashboardWidgetsProps) {
   const [widgets, setWidgets] = useState<UserWidgets | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,10 +48,17 @@ export function DashboardWidgets() {
         setIsLoading(true);
         setError(null);
 
-        // TODO: No futuro, buscar widgets do usuário da API
-        // Por enquanto, usando layout padrão
+        // Filtrar ações rápidas se não devem ser exibidas
+        const defaultLayout: WidgetKey[] = [
+          "spending_chart",
+          "recent_transactions",
+        ];
+        if (displayQuickActions) {
+          defaultLayout.splice(1, 0, "quick_actions");
+        }
+
         setWidgets({
-          layout: ["spending_chart", "quick_actions", "recent_transactions"],
+          layout: defaultLayout,
         });
       } catch (err) {
         console.error("Erro ao carregar widgets:", err);
@@ -56,29 +69,39 @@ export function DashboardWidgets() {
     }
 
     loadWidgets();
-  }, []);
+  }, [displayQuickActions]);
 
   if (isLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        {Array(3)
-          .fill(0)
-          .map((_, index) => (
-            <Card
-              key={index}
-              className={cn(
-                "md:col-span-2 lg:col-span-1",
-                index === 2 && "lg:col-span-2",
-              )}
-            >
-              <CardHeader>
-                <div className="h-5 w-32 animate-pulse rounded-md bg-muted" />
-              </CardHeader>
-              <CardContent>
-                <div className="h-[200px] animate-pulse rounded-md bg-muted" />
-              </CardContent>
-            </Card>
-          ))}
+      <div className="grid gap-4">
+        <Card className="w-full">
+          <CardHeader>
+            <div className="h-5 w-32 animate-pulse rounded-md bg-muted" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-[250px] animate-pulse rounded-md bg-muted" />
+          </CardContent>
+        </Card>
+
+        {displayQuickActions && (
+          <Card className="w-full">
+            <CardHeader>
+              <div className="h-5 w-32 animate-pulse rounded-md bg-muted" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-[120px] animate-pulse rounded-md bg-muted" />
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="w-full">
+          <CardHeader>
+            <div className="h-5 w-32 animate-pulse rounded-md bg-muted" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px] animate-pulse rounded-md bg-muted" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -94,19 +117,13 @@ export function DashboardWidgets() {
   if (!widgets) return null;
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
+    <div className="flex flex-col gap-4">
       {widgets.layout.map((widgetKey) => {
         const widget = WIDGETS[widgetKey];
         const WidgetComponent = widget.component;
 
         return (
-          <Card
-            key={widgetKey}
-            className={cn(
-              "md:col-span-2 lg:col-span-1",
-              widgetKey === "recent_transactions" && "lg:col-span-2",
-            )}
-          >
+          <Card key={widgetKey} className="w-full">
             <CardHeader>
               <CardTitle>{widget.title}</CardTitle>
             </CardHeader>

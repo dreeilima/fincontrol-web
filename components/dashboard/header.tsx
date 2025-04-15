@@ -47,27 +47,29 @@ export function DashboardHeader({
   }
 
   return (
-    <div className="space-y-1">
-      <h2 className="text-3xl font-bold tracking-tight">
-        {status === "loading" ? (
-          <span className="block h-9 w-48 animate-pulse rounded-md bg-muted" />
-        ) : (
-          <>
-            {heading || (
-              <>
-                {getGreeting()}, {userName || "visitante"}! 👋
-              </>
-            )}
-          </>
-        )}
-      </h2>
-      <p className="text-muted-foreground">
-        {status === "loading" ? (
-          <span className="block h-5 w-96 animate-pulse rounded-md bg-muted" />
-        ) : (
-          description || getDefaultDescription()
-        )}
-      </p>
+    <div className="flex items-center justify-between">
+      <div className="space-y-1">
+        <h2 className="text-3xl font-bold tracking-tight">
+          {status === "loading" ? (
+            <span className="block h-9 w-48 animate-pulse rounded-md bg-muted" />
+          ) : (
+            <>
+              {heading || (
+                <>
+                  {getGreeting()}, {userName || "visitante"}! 👋
+                </>
+              )}
+            </>
+          )}
+        </h2>
+        <p className="text-muted-foreground">
+          {status === "loading" ? (
+            <span className="block h-5 w-96 animate-pulse rounded-md bg-muted" />
+          ) : (
+            description || getDefaultDescription()
+          )}
+        </p>
+      </div>
     </div>
   );
 }
