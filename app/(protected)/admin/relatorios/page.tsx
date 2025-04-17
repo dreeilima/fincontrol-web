@@ -1,4 +1,4 @@
-import { AdminReports } from "@/components/admin/reports";
+import { AdminReports } from "@/components/admin/new-reports";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 

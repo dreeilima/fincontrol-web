@@ -56,19 +56,27 @@ export function DefaultCategoryForm({ onSuccess }: DefaultCategoryFormProps) {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/admin/categories", {
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/admin/categories?t=${timestamp}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(values),
       });
 
-      if (!response.ok) throw new Error();
+      const data = await response.json();
 
-      toast.success("Categoria criada com sucesso!");
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao criar categoria");
+      }
+
+      console.log("Categoria padrão criada:", data);
+      toast.success("Categoria padrão criada com sucesso!");
       form.reset();
       onSuccess?.();
-    } catch (error) {
-      toast.error("Erro ao criar categoria");
+    } catch (error: any) {
+      console.error("Erro ao criar categoria padrão:", error);
+      toast.error(error.message || "Erro ao criar categoria padrão");
     } finally {
       setIsLoading(false);
     }

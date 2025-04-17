@@ -1,4 +1,5 @@
 import * as React from "react";
+import Image from "next/image";
 import { cva, VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
@@ -45,16 +46,49 @@ const buttonVariants = cva(
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {}
+    VariantProps<typeof buttonVariants> {
+  isLoading?: boolean;
+  loadingText?: string;
+}
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant, size, rounded, ...props }, ref) => {
+  (
+    {
+      className,
+      variant,
+      size,
+      rounded,
+      isLoading,
+      loadingText,
+      children,
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <button
         className={cn(buttonVariants({ variant, size, rounded, className }))}
         ref={ref}
+        disabled={isLoading || props.disabled}
         {...props}
-      />
+      >
+        {isLoading ? (
+          <>
+            <span className="mr-2 inline-flex">
+              <Image
+                src="/cofrinho.gif"
+                alt="Carregando..."
+                width={20}
+                height={20}
+                className="size-5"
+              />
+            </span>
+            {loadingText || children}
+          </>
+        ) : (
+          children
+        )}
+      </button>
     );
   },
 );

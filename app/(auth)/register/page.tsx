@@ -63,16 +63,21 @@ export default function RegisterPage() {
 
           <UserAuthForm type="register" />
 
-          {selectedPlan && (
-            <div className="rounded-lg bg-muted p-3 text-center">
-              <p className="text-sm font-medium">
-                Plano selecionado:{" "}
-                <span className="font-semibold text-primary">
-                  {selectedPlan.toUpperCase()}
-                </span>
+          <div className="rounded-lg bg-muted p-3 text-center">
+            <p className="text-sm font-medium">
+              Plano selecionado:{" "}
+              <span className="font-semibold text-primary">
+                {selectedPlan
+                  ? selectedPlan.toUpperCase()
+                  : "BÁSICO (GRATUITO)"}
+              </span>
+            </p>
+            {!selectedPlan && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Você pode atualizar para o plano Premium a qualquer momento
               </p>
-            </div>
-          )}
+            )}
+          </div>
 
           <p className="px-8 text-center text-sm text-muted-foreground">
             Ao clicar em continuar, você concorda com nossos{" "}

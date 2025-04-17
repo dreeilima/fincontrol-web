@@ -1,17 +1,13 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -30,207 +26,362 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const formSchema = z.object({
-  siteName: z.string().min(1, "Nome do site é obrigatório"),
-  description: z.string(),
-  maintenanceMode: z.boolean(),
-  signupEnabled: z.boolean(),
-  defaultPlan: z.enum(["BASIC", "PRO"]),
-  supportEmail: z.string().email("Email inválido"),
-  maxUsersPerPlan: z.object({
-    basic: z.string(),
-    pro: z.string(),
-  }),
+  default_currency: z.string().min(1, "Moeda é obrigatória"),
+  date_format: z.string().min(1, "Formato de data é obrigatório"),
+  time_format: z.string().min(1, "Formato de hora é obrigatório"),
+  decimal_separator: z.string().min(1, "Separador decimal é obrigatório"),
+  thousands_separator: z.string().min(1, "Separador de milhares é obrigatório"),
+  max_categories: z.number().min(1, "Mínimo de 1 categoria"),
+  max_transactions: z.number().min(1, "Mínimo de 1 transação"),
+  max_file_size: z.number().min(1, "Tamanho mínimo de 1MB"),
+  max_users: z.number().min(1, "Mínimo de 1 usuário"),
+  max_plans: z.number().min(1, "Mínimo de 1 plano"),
+  max_features_per_plan: z.number().min(1, "Mínimo de 1 recurso por plano"),
+  support_email: z.string().email("Email inválido"),
+  notification_email: z.string().email("Email inválido"),
+  smtp_host: z.string().optional(),
+  smtp_port: z.number().optional(),
+  smtp_user: z.string().optional(),
+  smtp_password: z.string().optional(),
+  smtp_secure: z.boolean(),
+  token_expiration: z.number().min(300, "Mínimo de 5 minutos"),
+  max_login_attempts: z.number().min(1, "Mínimo de 1 tentativa"),
+  lockout_time: z.number().min(60, "Mínimo de 1 minuto"),
+  enable_email_notifications: z.boolean(),
+  enable_push_notifications: z.boolean(),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export function SystemSettings() {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      siteName: "FinControl",
-      description: "Sistema de controle financeiro pessoal",
-      maintenanceMode: false,
-      signupEnabled: true,
-      defaultPlan: "BASIC",
-      supportEmail: "suporte@fincontrol.com",
-      maxUsersPerPlan: {
-        basic: "1000",
-        pro: "5000",
-      },
+  const queryClient = useQueryClient();
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["system-settings"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/system-settings");
+      if (!response.ok) throw new Error("Erro ao carregar configurações");
+      return response.json();
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      // TODO: Implementar atualização das configurações
-      console.log(values);
-    } catch (error) {
-      console.error(error);
-    }
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      default_currency: "BRL",
+      date_format: "DD/MM/YYYY",
+      time_format: "HH:mm",
+      decimal_separator: ",",
+      thousands_separator: ".",
+      max_categories: 10,
+      max_transactions: 100,
+      max_file_size: 5,
+      max_users: 100,
+      max_plans: 5,
+      max_features_per_plan: 10,
+    },
+    values: settings,
+  });
+
+  const { mutate: updateSettings, isPending } = useMutation({
+    mutationFn: async (values: FormValues) => {
+      const response = await fetch("/api/admin/system-settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      });
+      if (!response.ok) throw new Error("Erro ao atualizar configurações");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["system-settings"] });
+      toast.success("Configurações atualizadas com sucesso!");
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  if (isLoading) {
+    return <div>Carregando...</div>;
   }
 
   return (
-    <div className="grid gap-4 sm:gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Configurações Gerais</CardTitle>
-          <CardDescription>Configurações básicas do sistema.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="siteName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome do Site</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="supportEmail"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email de Suporte</FormLabel>
-                      <FormControl>
-                        <Input {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
+    <Card>
+      <CardHeader>
+        <CardTitle>Configurações do Sistema</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit((values) => updateSettings(values))}
+            className="space-y-8"
+          >
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <FormField
                 control={form.control}
-                name="description"
+                name="default_currency"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descrição</FormLabel>
-                    <FormControl>
-                      <Textarea {...field} />
-                    </FormControl>
+                    <FormLabel>Moeda Padrão</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a moeda" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="BRL">Real (R$)</SelectItem>
+                        <SelectItem value="USD">Dólar ($)</SelectItem>
+                        <SelectItem value="EUR">Euro (€)</SelectItem>
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="maintenanceMode"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Modo Manutenção</FormLabel>
-                        <FormDescription>
-                          Ativar modo de manutenção do sistema
-                        </FormDescription>
-                      </div>
+              <FormField
+                control={form.control}
+                name="date_format"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Formato de Data</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o formato" />
+                        </SelectTrigger>
                       </FormControl>
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
+                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
+                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="signupEnabled"
-                  render={({ field }) => (
-                    <FormItem className="flex items-center justify-between rounded-lg border p-4">
-                      <div className="space-y-0.5">
-                        <FormLabel>Cadastros</FormLabel>
-                        <FormDescription>
-                          Permitir novos cadastros
-                        </FormDescription>
-                      </div>
+              <FormField
+                control={form.control}
+                name="time_format"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Formato de Hora</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o formato" />
+                        </SelectTrigger>
                       </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <SelectContent>
+                        <SelectItem value="HH:mm">24 horas</SelectItem>
+                        <SelectItem value="hh:mm A">12 horas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="grid gap-4 sm:grid-cols-3">
-                <FormField
-                  control={form.control}
-                  name="defaultPlan"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Plano Padrão</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="BASIC">Basic</SelectItem>
-                          <SelectItem value="PRO">Pro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="maxUsersPerPlan.basic"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Limite Basic</FormLabel>
+              <FormField
+                control={form.control}
+                name="decimal_separator"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Separador Decimal</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o separador" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value=",">Vírgula (,)</SelectItem>
+                        <SelectItem value=".">Ponto (.)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="maxUsersPerPlan.pro"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Limite Pro</FormLabel>
+              <FormField
+                control={form.control}
+                name="thousands_separator"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Separador de Milhares</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o separador" />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                      <SelectContent>
+                        <SelectItem value=".">Ponto (.)</SelectItem>
+                        <SelectItem value=",">Vírgula (,)</SelectItem>
+                        <SelectItem value=" ">Espaço ( )</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-              <div className="flex justify-end">
-                <Button type="submit">Salvar Alterações</Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+              <FormField
+                control={form.control}
+                name="max_categories"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Máximo de Categorias</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Número máximo de categorias que um usuário pode criar
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_transactions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Máximo de Transações</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Número máximo de transações por mês no plano gratuito
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_file_size"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tamanho Máximo de Arquivo (MB)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Tamanho máximo em MB para upload de arquivos
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_users"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Máximo de Usuários</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Número máximo de usuários no sistema
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_plans"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Máximo de Planos</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Número máximo de planos disponíveis
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="max_features_per_plan"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Máximo de Recursos por Plano</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Número máximo de recursos que um plano pode ter
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <Button type="submit" disabled={isPending}>
+              {isPending ? "Salvando..." : "Salvar Configurações"}
+            </Button>
+          </form>
+        </Form>
+      </CardContent>
+    </Card>
   );
 }

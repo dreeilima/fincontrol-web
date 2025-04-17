@@ -40,28 +40,6 @@ export function SiteFooter({ className }: React.HTMLAttributes<HTMLElement>) {
           <span className="text-sm text-muted-foreground">
             Copyright &copy; 2025. Todos os direitos reservados.
           </span>
-          <p className="text-left text-sm text-muted-foreground">
-            Desenvolvido por{" "}
-            <Link
-              href={siteConfig.links.twitter}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium underline underline-offset-4"
-            >
-              Andrei Lima
-            </Link>
-          </p>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href={siteConfig.links.github}
-              target="_blank"
-              rel="noreferrer"
-              className="font-medium underline underline-offset-4"
-            >
-              <Icons.gitHub className="size-5" />
-            </Link>
-          </div>
         </div>
       </div>
     </footer>

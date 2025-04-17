@@ -76,21 +76,37 @@ export function EditCategoryDialog({
     setIsLoading(true);
 
     try {
-      const response = await fetch(`/api/admin/categories/${category.id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      const response = await fetch(
+        `/api/admin/categories/${category.id}?t=${timestamp}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
         },
-        body: JSON.stringify(data),
-      });
+      );
 
-      if (!response.ok) throw new Error();
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error(
+          "Erro ao atualizar categoria:",
+          errorData || response.statusText,
+        );
+        throw new Error(errorData?.message || "Falha ao atualizar categoria");
+      }
+
+      const updatedCategory = await response.json();
+      console.log("Categoria atualizada com sucesso:", updatedCategory);
 
       toast.success("Categoria atualizada com sucesso");
       onSuccess();
       setOpen(false);
     } catch (error) {
-      toast.error("Erro ao atualizar categoria");
+      console.error("Erro ao atualizar categoria:", error);
+      toast.error("Erro ao atualizar categoria. Tente novamente.");
     } finally {
       setIsLoading(false);
     }

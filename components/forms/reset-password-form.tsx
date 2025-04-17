@@ -91,9 +91,9 @@ export function ResetPasswordForm() {
         <Button
           type="submit"
           className="w-full bg-green-500 hover:bg-green-600"
-          disabled={isLoading}
+          isLoading={isLoading}
+          loadingText="Enviando..."
         >
-          {isLoading && <Icons.spinner className="mr-2 size-4 animate-spin" />}
           Enviar instruções
         </Button>
       </form>

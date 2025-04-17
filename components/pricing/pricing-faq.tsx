@@ -40,7 +40,7 @@ const faqs = [
   {
     question: "E se eu precisar de ajuda?",
     answer:
-      "Nosso suporte está disponível diretamente pelo WhatsApp. Os planos Pro e Premium incluem atendimento prioritário e suporte VIP 24/7.",
+      "Nosso suporte está disponível diretamente pelo WhatsApp. O plano Premium inclue atendimento prioritário e suporte VIP 24/7.",
   },
 ];
 

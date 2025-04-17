@@ -1,43 +1,88 @@
+import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { auth } from "@/auth";
+import { auth, authOptions } from "@/auth";
 import { Decimal } from "@prisma/client/runtime/library";
+import { getServerSession } from "next-auth";
 
 import { db } from "@/lib/db";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse("Não autorizado", { status: 401 });
     }
 
-    const { amount, description, categoryId, date, type } = await req.json();
-
-    // Buscar a categoria pelo ID ao invés do nome
-    const category = await db.categories.findFirst({
+    // Verificar limite de transações
+    const userSubscription = await db.subscriptions.findFirst({
       where: {
         user_id: session.user.id,
-        id: categoryId, // Usar o ID ao invés do nome
+        status: "active",
       },
+      include: { plan: true },
+    });
+
+    // Se o usuário não tem um plano premium, verificamos os limites
+    if (!userSubscription || userSubscription.plan?.price === 0) {
+      // Buscar configurações do sistema para obter o limite de transações
+      const settings = await db.system_settings.findFirst();
+      const maxTransactions = settings?.max_transactions || 100; // Valor padrão se não existir configuração
+
+      // Contar transações do mês atual
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const transactionsCount = await db.transactions.count({
+        where: {
+          user_id: session.user.id,
+          created_at: {
+            gte: startOfMonth,
+          },
+        },
+      });
+
+      if (transactionsCount >= maxTransactions) {
+        return new NextResponse(
+          `Limite de ${maxTransactions} transações atingido para este mês. Atualize para o plano Premium para transações ilimitadas.`,
+          { status: 403 },
+        );
+      }
+    }
+
+    const body = await req.json();
+
+    // Buscar a categoria para obter o nome
+    const category = await db.categories.findUnique({
+      where: { id: body.categoryId },
+      select: { name: true },
     });
 
     if (!category) {
       return new NextResponse("Categoria não encontrada", { status: 404 });
     }
 
+    // Garantir que o amount seja um número válido
+    let amount = body.amount;
+    if (typeof amount === "string") {
+      // Substituir vírgula por ponto se necessário
+      amount = amount.replace(",", ".");
+      // Converter para número
+      amount = parseFloat(amount);
+
+      if (isNaN(amount)) {
+        return new NextResponse("Valor inválido", { status: 400 });
+      }
+    }
+
+    // Criar a transação com um ID gerado
     const transaction = await db.transactions.create({
       data: {
-        id: crypto.randomUUID(),
-        amount: new Decimal(amount),
-        description,
-        categoryId,
-        category: category.name, // Usar o nome da categoria encontrada
-        date: new Date(date),
-        type,
+        id: crypto.randomUUID(), // Gerar um ID único
+        ...body,
+        amount, // Usar o valor convertido
+        category: category.name, // Adicionar o nome da categoria
         user_id: session.user.id,
-      },
-      include: {
-        categories: true,
       },
     });
 
@@ -128,6 +173,19 @@ export async function PUT(req: Request) {
       return new Response("Category not found", { status: 404 });
     }
 
+    // Garantir que o amount seja um número válido
+    let amount = body.amount;
+    if (typeof amount === "string") {
+      // Substituir vírgula por ponto se necessário
+      amount = amount.replace(",", ".");
+      // Converter para número
+      amount = parseFloat(amount);
+
+      if (isNaN(amount)) {
+        return new Response("Valor inválido", { status: 400 });
+      }
+    }
+
     const date = new Date(`${body.date}T03:00:00.000Z`);
 
     const transaction = await db.transactions.update({
@@ -137,6 +195,7 @@ export async function PUT(req: Request) {
       },
       data: {
         ...body,
+        amount, // Usar o valor convertido
         category: category.name, // Atualiza o nome da categoria
         categoryId: category.id, // Atualiza o ID da categoria
         date,

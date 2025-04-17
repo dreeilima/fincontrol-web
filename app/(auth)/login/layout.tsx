@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 
+import { Loading } from "@/components/shared/loading";
+
 export default function LoginLayout({
   children,
 }: {
@@ -29,8 +31,7 @@ export default function LoginLayout({
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-green-500"></div>
-          <p className="mt-2 text-sm text-gray-500">Carregando...</p>
+          <Loading size="default" minDisplayTime={2000} />
         </div>
       </div>
     );

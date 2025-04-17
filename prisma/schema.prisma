@@ -51,7 +51,7 @@ model categories {
   created_at   DateTime       @default(now()) @db.Timestamptz(6)
   color        String?
   icon         String?
-  is_default   Boolean        @default(false)  // Add this line
+  is_default   Boolean        @default(false) // Add this line
   updated_at   DateTime       @default(now()) @updatedAt @db.Timestamptz(6)
   users        users          @relation(fields: [user_id], references: [id])
   transactions transactions[]
@@ -106,38 +106,42 @@ model transactions {
 model subscriptions {
   id                        String    @id @default(uuid())
   user_id                   String    @unique
+  plan_id                   String
   stripe_customer_id        String?
   stripe_subscription_id    String?
-  stripe_price_id          String?
+  stripe_price_id           String?
   stripe_current_period_end DateTime?
-  status                   String    @default("inactive")
-  plan                     String    @default("basic")    // Adicionando plano padrão como "basic"
-  price                    Float     @default(990)        // Adicionando preço padrão como 990 (R$ 9,90)
-  created_at               DateTime  @default(now())
-  updated_at               DateTime  @updatedAt
-  user                     users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  status                    String    @default("inactive")
+  start_date                DateTime  @default(now())
+  end_date                  DateTime
+  created_at                DateTime  @default(now())
+  updated_at                DateTime  @updatedAt
+  user                      users     @relation("UserActiveSubscription", fields: [user_id], references: [id], onDelete: Cascade, map: "subscriptions_user_active_fkey")
+  plan                      plans     @relation(fields: [plan_id], references: [id], onDelete: Cascade, map: "subscriptions_plan_fkey")
+  user_subscriptions        users     @relation("UserSubscriptions", fields: [user_id], references: [id], map: "subscriptions_user_subscriptions_fkey")
 
-  @@map("subscriptions")
+  @@index([user_id])
+  @@index([plan_id])
 }
 
 model user_goals {
   id                String   @id @default(uuid())
-  user_id          String   @unique
-  monthly_budget   Float    @default(0)
-  savings_goal     Float    @default(0)
+  user_id           String   @unique
+  monthly_budget    Float    @default(0)
+  savings_goal      Float    @default(0)
   savings_frequency String   @default("monthly")
-  created_at       DateTime @default(now()) @db.Timestamptz(6)
-  updated_at       DateTime @updatedAt @db.Timestamptz(6)
-  user             users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  created_at        DateTime @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime @updatedAt @db.Timestamptz(6)
+  user              users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }
 
 model user_preferences {
-  id                    String   @id @default(uuid())
-  user_id              String   @unique
-  email_notifications  Boolean  @default(true)
-  marketing_emails     Boolean  @default(false)
-  transaction_alerts   Boolean  @default(true)
-  budget_alerts        Boolean  @default(true)
+  id                  String   @id @default(uuid())
+  user_id             String   @unique
+  email_notifications Boolean  @default(true)
+  marketing_emails    Boolean  @default(false)
+  transaction_alerts  Boolean  @default(true)
+  budget_alerts       Boolean  @default(true)
   theme               String   @default("light")
   language            String   @default("pt-BR")
   created_at          DateTime @default(now()) @db.Timestamptz(6)
@@ -150,7 +154,7 @@ model budgetSettings {
   id            String   @id @default(uuid())
   userId        String   @unique
   monthlyBudget Float    @default(5000)
-  savingsGoal   Float    @default(20)  // percentual
+  savingsGoal   Float    @default(20) // percentual
   created_at    DateTime @default(now()) @db.Timestamptz(6)
   updated_at    DateTime @updatedAt @db.Timestamptz(6)
   user          users    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -158,40 +162,45 @@ model budgetSettings {
 
 // Atualizar o modelo users para incluir a relação
 model users {
-  id                        String          @id @default(uuid())
-  name                      String
-  email                     String          @unique
-  password                  String
-  created_at                DateTime        @default(now()) @db.Timestamptz(6)
-  updated_at                DateTime        @updatedAt @db.Timestamptz(6)
-  role                      UserRole        @default(USER)
-  avatar_url                String?
-  bio                       String?
-  company                   String?
-  website                   String?
-  location                  String?
-  notification_email        Boolean         @default(true)
-  notification_push         Boolean         @default(true)
-  theme                     String?
-  language                  String?
-  is_active                 Boolean         @default(true)
-  stripe_current_period_end DateTime?
-  stripe_customer_id        String?
-  stripe_price_id           String?
-  stripe_subscription_id    String?
-  emailNotifications        Boolean         @default(true)
-  marketingEmails           Boolean         @default(false)
-  phone                     String          @unique
-  accounts                  accounts[]
-  bank_accounts             bank_accounts[]
-  categories                categories[]
-  profile                   profiles?
-  sessions                  sessions[]
-  transactions              transactions[]
-  subscription              subscriptions?
-  goals                     user_goals?
-  preferences               user_preferences?
-  budgetSettings            budgetSettings?
+  id                          String            @id @default(uuid())
+  name                        String
+  email                       String            @unique
+  password                    String
+  created_at                  DateTime          @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime          @updatedAt @db.Timestamptz(6)
+  role                        UserRole          @default(USER)
+  avatar_url                  String?
+  bio                         String?
+  company                     String?
+  website                     String?
+  location                    String?
+  notification_email          Boolean           @default(true)
+  notification_push           Boolean           @default(true)
+  theme                       String?
+  language                    String?
+  is_active                   Boolean           @default(true)
+  stripe_current_period_end   DateTime?
+  stripe_customer_id          String?
+  stripe_price_id             String?
+  stripe_subscription_id      String?
+  emailNotifications          Boolean           @default(true)
+  marketingEmails             Boolean           @default(false)
+  phone                       String            @unique
+  reset_password_token        String?
+  reset_password_token_expiry DateTime?
+  accounts                    accounts[]
+  bank_accounts               bank_accounts[]
+  categories                  categories[]
+  profile                     profiles?
+  sessions                    sessions[]
+  transactions                transactions[]
+  active_subscription         subscriptions?    @relation("UserActiveSubscription")
+  subscriptions               subscriptions[]   @relation("UserSubscriptions")
+  goals                       user_goals?
+  preferences                 user_preferences?
+  budgetSettings              budgetSettings?
+
+  @@map("users")
 }
 
 model verification_tokens {
@@ -211,6 +220,24 @@ model whatsapp_auth {
   updated_at  DateTime @db.Timestamptz(6)
 }
 
+model plans {
+  id          String   @id @default(uuid())
+  name        String
+  description String
+  price       Float
+  period      String   @default("MONTHLY")
+  is_active   Boolean  @default(true)
+  features    String[]
+  benefits    String[]
+  limitations String[]
+  max_transactions Int?  // Limite de transações
+  can_create_categories Boolean @default(true) // Permissão para criar categorias
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  subscriptions subscriptions[]
+}
+
 enum AccountType {
   CHECKING
   SAVINGS
@@ -227,4 +254,75 @@ enum TransactionType {
 enum UserRole {
   ADMIN
   USER
+}
+
+model system_settings {
+  id                    String   @id @default(uuid())
+  // Formatação
+  default_currency      String   @default("BRL")
+  date_format          String   @default("dd/MM/yyyy")
+  time_format          String   @default("HH:mm")
+  decimal_separator    String   @default(",")
+  thousands_separator  String   @default(".")
+  
+  // Limites
+  max_categories       Int      @default(50)
+  max_transactions     Int      @default(1000)
+  max_file_size        Int      @default(5) // MB
+  max_users            Int      @default(1000)
+  max_plans            Int      @default(10)
+  max_features_per_plan Int     @default(20)
+  
+  // Email
+  support_email        String   @default("suporte@fincontrol.com")
+  notification_email   String   @default("notificacoes@fincontrol.com")
+  smtp_host           String?
+  smtp_port           Int?
+  smtp_user           String?
+  smtp_password       String?
+  smtp_secure         Boolean   @default(true)
+  
+  // Segurança
+  token_expiration     Int      @default(3600) // em segundos
+  max_login_attempts   Int      @default(5)
+  lockout_time         Int      @default(900) // em segundos
+  
+  // Notificações
+  enable_email_notifications Boolean @default(true)
+  enable_push_notifications  Boolean @default(true)
+  enable_whatsapp_notifications Boolean @default(false)
+  
+  // Integrações
+  stripe_public_key    String?
+  stripe_secret_key    String?
+  stripe_webhook_secret String?
+  whatsapp_api_key     String?
+  whatsapp_api_secret  String?
+  
+  // Sistema
+  maintenance_mode     Boolean  @default(false)
+  allow_signups        Boolean  @default(true)
+  default_plan         String   @default("BASIC")
+  
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  @@map("system_settings")
+}
+
+model SystemSettings {
+  id                    String   @id @default(cuid())
+  default_currency      String   @default("BRL")
+  date_format          String   @default("DD/MM/YYYY")
+  time_format          String   @default("HH:mm")
+  decimal_separator    String   @default(",")
+  thousands_separator  String   @default(".")
+  max_categories       Int      @default(10)
+  max_transactions     Int      @default(100)
+  max_file_size        Int      @default(5)
+  max_users            Int      @default(100)
+  max_plans            Int      @default(5)
+  max_features_per_plan Int     @default(10)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
 }

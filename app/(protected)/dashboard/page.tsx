@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BudgetProgress } from "@/components/dashboard/budget-progress";
 import { DashboardHeader } from "@/components/dashboard/header";
+import { LimitsCard } from "@/components/dashboard/limits-card";
 import { DashboardMetrics } from "@/components/dashboard/metrics";
 import { QuickActions } from "@/components/dashboard/quick-actions";
 import { DashboardShell } from "@/components/dashboard/shell";
@@ -40,6 +41,13 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+
+        {/* Card de Limites do Plano */}
+        <Suspense fallback={<Skeleton className="h-[200px] w-full" />}>
+          <div className="w-full">
+            <LimitsCard />
+          </div>
+        </Suspense>
 
         <div className="w-full">
           <DashboardWidgets displayQuickActions={false} />

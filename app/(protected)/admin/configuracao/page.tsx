@@ -1,4 +1,4 @@
-import { SystemSettings } from "@/components/admin/system-settings";
+import { SystemSettings } from "@/components/admin/system-settings-new";
 import { DashboardHeader } from "@/components/dashboard/header";
 import { DashboardShell } from "@/components/dashboard/shell";
 
@@ -10,7 +10,10 @@ export const metadata = {
 export default async function SettingsPage() {
   return (
     <DashboardShell>
-      <DashboardHeader />
+      <DashboardHeader
+        heading="Configurações do Sistema"
+        text="Gerencie as configurações globais do FinControl"
+      />
       <div className="grid gap-4 sm:gap-6">
         <SystemSettings />
       </div>

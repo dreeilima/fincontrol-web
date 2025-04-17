@@ -1,5 +1,7 @@
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import NextAuth from "next-auth";
+import type { NextAuthOptions } from "next-auth";
+import { getServerSession } from "next-auth/next";
 
 import { db } from "@/lib/db";
 
@@ -9,26 +11,17 @@ if (!process.env.NEXTAUTH_SECRET) {
   throw new Error("NEXTAUTH_SECRET must be set");
 }
 
-export const {
-  handlers: { GET, POST },
-  auth,
-  signIn,
-  signOut,
-} = NextAuth({
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db) as any,
   session: {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // Força atualização a cada 24 horas
   },
-  // Mesclar os callbacks definidos no authConfig com os novos
-  ...authConfig,
+  providers: authConfig.providers,
+  pages: authConfig.pages,
   callbacks: {
-    // Preservar outros callbacks do authConfig
-    ...(authConfig.callbacks || {}),
-    // Sobrescrever ou adicionar os callbacks específicos
     async session({ session, token }) {
-      // Se a sessão tiver um usuário, garante que estamos usando os dados mais atualizados
       if (session?.user) {
         session.user = {
           ...session.user,
@@ -45,28 +38,18 @@ export const {
         };
       }
 
-      // Se temos um ID, vamos verificar se os dados no banco estão atualizados
+      // Verificação e atualização dos dados da sessão
       if (token.id) {
         try {
-          // Verifica se os dados da sessão estão atualizados com o banco
           const dbUser = await db.users.findUnique({
             where: { id: token.id as string },
-            select: {
-              name: true,
-              email: true,
-              role: true,
-            },
+            select: { name: true, email: true, role: true },
           });
 
-          // Se encontrou o usuário e os dados são diferentes, atualiza o token
           if (
             dbUser &&
             (dbUser.name !== token.name || dbUser.email !== token.email)
           ) {
-            console.log(
-              "Dados da sessão desatualizados, atualizando com DB:",
-              dbUser,
-            );
             session.user.name = dbUser.name;
             session.user.email = dbUser.email;
             session.user.role = dbUser.role === "ADMIN" ? "admin" : "user";
@@ -81,41 +64,29 @@ export const {
 
       return session;
     },
-    async jwt({ token, user, trigger, session }) {
-      // Inicialização do token com dados do usuário quando faz login
+    async jwt({ token, user }) {
       if (user) {
-        token = {
-          ...token,
-          ...user,
-        };
+        token.id = user.id;
+        token.name = user.name;
+        token.email = user.email;
+        token.role = user.role;
+        token.phone = user.phone;
+        token.stripe_customer_id = user.stripe_customer_id;
+        token.stripe_subscription_id = user.stripe_subscription_id;
+        token.stripe_price_id = user.stripe_price_id;
+        token.stripe_current_period_end = user.stripe_current_period_end;
       }
-
-      // Se for um evento de update, atualiza o token com os novos dados
-      if (trigger === "update" && session) {
-        console.log("Atualizando token com novos dados:", session);
-        // Atualiza apenas o que foi passado explicitamente na sessão
-        if (session.name) token.name = session.name;
-        if (session.email) token.email = session.email;
-      }
-
       return token;
     },
   },
-  cookies: {
-    sessionToken: {
-      name:
-        process.env.NODE_ENV === "production"
-          ? "__Secure-next-auth.session-token"
-          : "next-auth.session-token",
-      options: {
-        httpOnly: true,
-        sameSite: "lax",
-        path: "/",
-        secure: process.env.NODE_ENV === "production",
-      },
-    },
-  },
   secret: process.env.NEXTAUTH_SECRET,
-});
+};
 
-// This line is redundant since these exports are already declared above
+export default NextAuth(authOptions);
+export const auth = (options?: any) => getAuth(options ?? {});
+
+// Função para obter a sessão atual
+export async function getAuth(options: any = {}) {
+  const session = await getServerSession(authOptions);
+  return session;
+}

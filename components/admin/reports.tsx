@@ -115,12 +115,16 @@ export function AdminReports() {
           return;
         }
 
+        // Adicionar timestamp para evitar cache
+        const timestamp = new Date().getTime();
+
+        // Buscar dados reais das APIs
         const [reportsResponse, overviewResponse] = await Promise.all([
           fetch(
-            `/api/admin/reports?year=${selectedYear}&month=${selectedMonth}`,
+            `/api/admin/reports?year=${selectedYear}&month=${selectedMonth}&t=${timestamp}`,
           ),
           fetch(
-            `/api/admin/metrics/overview?year=${selectedYear}&month=${selectedMonth}`,
+            `/api/admin/metrics/overview?year=${selectedYear}&month=${selectedMonth}&t=${timestamp}`,
           ),
         ]);
 
@@ -133,6 +137,12 @@ export function AdminReports() {
           overviewResponse.json(),
         ]);
 
+        console.log("Dados de relatórios carregados:", {
+          reportsData,
+          overviewData,
+        });
+
+        // Armazenar dados reais no estado
         setMonthData((prev) => ({
           ...prev,
           [monthKey]: {
@@ -142,8 +152,8 @@ export function AdminReports() {
           },
         }));
       } catch (error) {
-        console.error(error);
-        toast.error("Erro ao carregar dados");
+        console.error("Erro ao carregar dados de relatórios:", error);
+        toast.error("Erro ao carregar dados. Tente novamente.");
       } finally {
         setIsLoading(false);
       }
@@ -206,12 +216,12 @@ export function AdminReports() {
         ],
         "Distribuição de Planos": [
           ["Plano", "Quantidade de Usuários"],
-          ["Basic", currentMonthData.overviewData.plans.basic],
-          ["Pro", currentMonthData.overviewData.plans.pro],
+          ["Básico", currentMonthData.overviewData.plans.basic],
+          ["Premium", currentMonthData.overviewData.plans.premium],
           [
             "Total",
             currentMonthData.overviewData.plans.basic +
-              currentMonthData.overviewData.plans.pro,
+              currentMonthData.overviewData.plans.premium,
           ],
         ],
       };
@@ -399,12 +409,12 @@ export function AdminReports() {
                   },
                 }}
                 data={{
-                  labels: ["Basic", "Pro"],
+                  labels: ["Básico", "Premium"],
                   datasets: [
                     {
                       data: [
                         currentMonthData.overviewData.plans.basic,
-                        currentMonthData.overviewData.plans.pro,
+                        currentMonthData.overviewData.plans.premium,
                       ],
                       backgroundColor: [
                         "rgba(59, 130, 246, 0.5)",

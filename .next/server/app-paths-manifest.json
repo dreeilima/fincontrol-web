@@ -1,0 +1,17 @@
+{
+  "/api/user/check/route": "app/api/user/check/route.js",
+  "/api/categories/route": "app/api/categories/route.js",
+  "/api/transactions/route": "app/api/transactions/route.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/admin/system-settings/route": "app/api/admin/system-settings/route.js",
+  "/api/user/budget-settings/route": "app/api/user/budget-settings/route.js",
+  "/api/system-settings/route": "app/api/system-settings/route.js",
+  "/api/transactions/count/route": "app/api/transactions/count/route.js",
+  "/api/transactions/[id]/route": "app/api/transactions/[id]/route.js",
+  "/(marketing)/[slug]/page": "app/(marketing)/[slug]/page.js",
+  "/(marketing)/page": "app/(marketing)/page.js",
+  "/(protected)/admin/configuracao/page": "app/(protected)/admin/configuracao/page.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/(protected)/dashboard/page": "app/(protected)/dashboard/page.js",
+  "/(protected)/dashboard/financas/page": "app/(protected)/dashboard/financas/page.js"
+}

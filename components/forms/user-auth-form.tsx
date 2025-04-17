@@ -34,12 +34,8 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
   const searchParams = useSearchParams();
   const selectedPlan = searchParams.get("plan");
 
-  // Redirecionar para pricing se não tiver plano selecionado
-  React.useEffect(() => {
-    if (!selectedPlan && type === "register") {
-      router.push("/pricing");
-    }
-  }, [selectedPlan, type, router]);
+  // Não redirecionamos mais para pricing se não tiver plano selecionado
+  // O usuário pode criar uma conta com o plano básico gratuito por padrão
 
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -84,21 +80,32 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
         throw new Error("Erro ao fazer login automático");
       }
 
-      // 3. Redireciona para o checkout do Stripe
-      const checkoutResponse = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          plan: selectedPlan?.toLowerCase(), // Changed from priceId to plan
-          interval: "monthly", // Add interval parameter
-        }),
-      });
+      // 3. Se tiver um plano selecionado (diferente do básico), redireciona para o checkout
+      if (
+        selectedPlan &&
+        selectedPlan.toLowerCase() !== "básico" &&
+        selectedPlan.toLowerCase() !== "basico"
+      ) {
+        const checkoutResponse = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            plan: selectedPlan.toLowerCase(),
+            interval: "monthly",
+          }),
+        });
 
-      const { url } = await checkoutResponse.json();
-      if (url) {
-        window.location.href = url;
+        const { url } = await checkoutResponse.json();
+        if (url) {
+          window.location.href = url;
+          return; // Importante retornar aqui para não executar o código abaixo
+        } else {
+          throw new Error("Erro ao criar sessão de checkout");
+        }
       } else {
-        throw new Error("Erro ao criar sessão de checkout");
+        // Se não tiver plano selecionado ou for o plano básico, redireciona para o dashboard
+        toast.success("Conta criada com sucesso! Bem-vindo ao plano Básico.");
+        router.push("/dashboard");
       }
     } catch (error: any) {
       console.error("Erro no registro:", error);
@@ -108,10 +115,7 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
     }
   }
 
-  // Se não tiver plano selecionado, não renderiza o formulário
-  if (!selectedPlan && type === "register") {
-    return null;
-  }
+  // Agora sempre renderizamos o formulário, mesmo sem plano selecionado
 
   return (
     <Form {...form}>
@@ -224,9 +228,9 @@ export function UserAuthForm({ type }: UserAuthFormProps) {
         <Button
           type="submit"
           className="w-full bg-green-500 hover:bg-green-600"
-          disabled={isLoading}
+          isLoading={isLoading}
+          loadingText="Criando conta..."
         >
-          {isLoading && <Icons.spinner className="mr-2 size-4 animate-spin" />}
           Criar conta
         </Button>
       </form>

@@ -36,6 +36,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
+import { PremiumUpgradeDialog } from "@/components/upgrade/premium-upgrade-dialog";
 
 const formSchema = z.object({
   description: z.string().min(1, "A descrição é obrigatória"),
@@ -62,6 +63,20 @@ export function TransactionForm({
   const router = useRouter();
   const { addTransaction, updateTransaction, categories } = useTransactions();
   const isEditing = !!transaction;
+
+  // Estado para controlar o diálogo de upgrade
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [systemSettings, setSystemSettings] = useState<{
+    max_transactions: number | null;
+  }>({ max_transactions: null });
+
+  // Buscar configurações do sistema
+  useEffect(() => {
+    fetch("/api/system-settings")
+      .then((res) => res.json())
+      .then((data) => setSystemSettings(data))
+      .catch((err) => console.error("Erro ao buscar configurações:", err));
+  }, []);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -123,7 +138,18 @@ export function TransactionForm({
       if (isEditing && transaction) {
         await updateTransaction(transaction.id, formattedData);
       } else {
-        await addTransaction(formattedData as any);
+        try {
+          await addTransaction(formattedData as any);
+        } catch (error) {
+          // Verificar se o erro é devido ao limite de transações
+          if (error instanceof Error && error.message.includes("Limite de")) {
+            // Mostrar diálogo de upgrade
+            setShowUpgradeDialog(true);
+            setIsSubmitting(false);
+            return;
+          }
+          throw error; // Re-lançar o erro para ser tratado no catch externo
+        }
       }
 
       toast({
@@ -300,6 +326,16 @@ export function TransactionForm({
           )}
         </Button>
       </form>
+
+      {/* Diálogo de upgrade para o plano premium */}
+      {showUpgradeDialog && (
+        <PremiumUpgradeDialog
+          isOpen={showUpgradeDialog}
+          onClose={() => setShowUpgradeDialog(false)}
+          limitType="transactions"
+          currentLimit={systemSettings.max_transactions || 10}
+        />
+      )}
     </Form>
   );
 }

@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Icons } from "@/components/shared/icons";
+import { Loading } from "@/components/shared/loading";
 
 interface Subscription {
   id: string;
@@ -287,10 +288,7 @@ export default function BillingPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4">
-        <div className="animate-spin">
-          <Icons.spinner className="size-8" />
-        </div>
-        <p className="text-muted-foreground">Carregando informações...</p>
+        <Loading size="default" />
       </div>
     );
   }

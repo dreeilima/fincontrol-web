@@ -39,9 +39,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { PremiumUpgradeDialog } from "@/components/upgrade/premium-upgrade-dialog";
 
 const formSchema = z.object({
-  amount: z.string().transform((val) => new Decimal(val)),
+  amount: z
+    .string()
+    .min(1, "Valor é obrigatório")
+    .refine((val) => !isNaN(Number(val)), {
+      message: "Valor deve ser um número válido",
+    })
+    .transform((val) => {
+      try {
+        return new Decimal(val.replace(",", "."));
+      } catch (error) {
+        return new Decimal(0);
+      }
+    }),
   description: z.string().optional(),
   categoryId: z.string().min(1, "Categoria é obrigatória"),
   date: z.date(),
@@ -74,7 +87,7 @@ export function TransactionForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      amount: transaction?.amount.toString() ?? "",
+      amount: transaction?.amount ? transaction.amount.toString() : "",
       description: transaction?.description ?? "",
       categoryId: transaction?.categoryId ?? "",
       date: transaction ? new Date(transaction.date) : new Date(),
@@ -86,25 +99,53 @@ export function TransactionForm({
     ? categories.find((c) => c.id === form.watch("categoryId"))
     : null;
 
+  // Estado para controlar o diálogo de upgrade
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [systemSettings, setSystemSettings] = useState<{
+    max_transactions: number | null;
+  }>({ max_transactions: null });
+
+  // Buscar configurações do sistema
+  useEffect(() => {
+    fetch("/api/system-settings")
+      .then((res) => res.json())
+      .then((data) => setSystemSettings(data))
+      .catch((err) => console.error("Erro ao buscar configurações:", err));
+  }, []);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsSubmitting(true);
+
+      // Converter o Decimal para string antes de enviar
+      const dataToSend = {
+        ...values,
+        amount: values.amount.toString(),
+        type,
+      };
 
       const response = await fetch("/api/transactions", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          ...values,
-          type,
-        }),
+        body: JSON.stringify(dataToSend),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Algo deu errado");
+        // Verificar se o erro é devido ao limite de transações
+        if (
+          response.status === 403 &&
+          data.includes &&
+          data.includes("Limite de")
+        ) {
+          // Mostrar diálogo de upgrade
+          setShowUpgradeDialog(true);
+          return;
+        }
+        throw new Error(data.error || data || "Algo deu errado");
       }
 
       toast.success(
@@ -134,11 +175,20 @@ export function TransactionForm({
               <FormLabel>Valor</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  step="0.01"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="0,00"
                   {...field}
-                  value={field.value.toString()}
+                  value={
+                    field.value instanceof Decimal
+                      ? field.value.toString()
+                      : field.value
+                  }
+                  onChange={(e) => {
+                    // Permitir apenas números, vírgula e ponto
+                    const value = e.target.value.replace(/[^0-9.,]/g, "");
+                    field.onChange(value);
+                  }}
                 />
               </FormControl>
               <FormMessage />
@@ -254,6 +304,16 @@ export function TransactionForm({
           )}
         </Button>
       </form>
+
+      {/* Diálogo de upgrade para o plano premium */}
+      {showUpgradeDialog && (
+        <PremiumUpgradeDialog
+          isOpen={showUpgradeDialog}
+          onClose={() => setShowUpgradeDialog(false)}
+          limitType="transactions"
+          currentLimit={systemSettings.max_transactions || 10}
+        />
+      )}
     </Form>
   );
 }

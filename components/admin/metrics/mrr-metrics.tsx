@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUpRight, DollarSign, TrendingDown, TrendingUp, Users } from "lucide-react";
+import {
+  ArrowUpRight,
+  DollarSign,
+  TrendingDown,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,20 +37,28 @@ export function MRRMetrics() {
   useEffect(() => {
     async function fetchMRRData() {
       try {
-        // No futuro, buscar da API
-        // const response = await fetch("/api/admin/metrics/mrr");
-        // const data = await response.json();
-        
-        // Dados simulados para demonstração
+        setIsLoading(true);
+
+        // Adicionar timestamp para evitar cache
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/admin/metrics/mrr?t=${timestamp}`);
+
+        if (!response.ok) {
+          throw new Error("Falha ao carregar dados de MRR");
+        }
+
+        const result = await response.json();
+        console.log("Dados de MRR carregados:", result);
+
         setData({
-          mrr: 12500,
-          mrrChange: 15.3,
-          arpu: 89.90,
-          arpuChange: 5.2,
-          activeSubscribers: 139,
-          subscribersChange: 12.8,
-          ltv: 1078.80,
-          ltvChange: 8.5,
+          mrr: result.mrr || 0,
+          mrrChange: result.mrrChange || 0,
+          arpu: result.arpu || 0,
+          arpuChange: result.arpuChange || 0,
+          activeSubscribers: result.activeSubscribers || 0,
+          subscribersChange: result.subscribersChange || 0,
+          ltv: result.ltv || 0,
+          ltvChange: result.ltvChange || 0,
         });
       } catch (error) {
         console.error("Erro ao buscar dados de MRR:", error);
@@ -54,6 +68,12 @@ export function MRRMetrics() {
     }
 
     fetchMRRData();
+
+    // Configurar atualização automática a cada 5 minutos
+    const intervalId = setInterval(fetchMRRData, 5 * 60 * 1000);
+
+    // Limpar intervalo quando o componente for desmontado
+    return () => clearInterval(intervalId);
   }, []);
 
   if (isLoading) {
@@ -81,7 +101,8 @@ export function MRRMetrics() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="max-w-xs">
-                    Monthly Recurring Revenue - Receita mensal recorrente de todas as assinaturas ativas
+                    Monthly Recurring Revenue - Receita mensal recorrente de
+                    todas as assinaturas ativas
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -94,15 +115,21 @@ export function MRRMetrics() {
               {data.mrrChange > 0 ? (
                 <>
                   <TrendingUp className="mr-1 size-3 text-emerald-500" />
-                  <span className="text-emerald-500">+{data.mrrChange.toFixed(1)}%</span>
+                  <span className="text-emerald-500">
+                    +{data.mrrChange.toFixed(1)}%
+                  </span>
                 </>
               ) : (
                 <>
                   <TrendingDown className="mr-1 size-3 text-rose-500" />
-                  <span className="text-rose-500">{data.mrrChange.toFixed(1)}%</span>
+                  <span className="text-rose-500">
+                    {data.mrrChange.toFixed(1)}%
+                  </span>
                 </>
               )}
-              <span className="ml-1 text-muted-foreground">vs. mês anterior</span>
+              <span className="ml-1 text-muted-foreground">
+                vs. mês anterior
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -125,20 +152,28 @@ export function MRRMetrics() {
             <Users className="size-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(data.arpu)}</div>
+            <div className="text-2xl font-bold">
+              {formatCurrency(data.arpu)}
+            </div>
             <div className="mt-1 flex items-center text-xs">
               {data.arpuChange > 0 ? (
                 <>
                   <TrendingUp className="mr-1 size-3 text-emerald-500" />
-                  <span className="text-emerald-500">+{data.arpuChange.toFixed(1)}%</span>
+                  <span className="text-emerald-500">
+                    +{data.arpuChange.toFixed(1)}%
+                  </span>
                 </>
               ) : (
                 <>
                   <TrendingDown className="mr-1 size-3 text-rose-500" />
-                  <span className="text-rose-500">{data.arpuChange.toFixed(1)}%</span>
+                  <span className="text-rose-500">
+                    {data.arpuChange.toFixed(1)}%
+                  </span>
                 </>
               )}
-              <span className="ml-1 text-muted-foreground">vs. mês anterior</span>
+              <span className="ml-1 text-muted-foreground">
+                vs. mês anterior
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -156,15 +191,21 @@ export function MRRMetrics() {
               {data.subscribersChange > 0 ? (
                 <>
                   <TrendingUp className="mr-1 size-3 text-emerald-500" />
-                  <span className="text-emerald-500">+{data.subscribersChange.toFixed(1)}%</span>
+                  <span className="text-emerald-500">
+                    +{data.subscribersChange.toFixed(1)}%
+                  </span>
                 </>
               ) : (
                 <>
                   <TrendingDown className="mr-1 size-3 text-rose-500" />
-                  <span className="text-rose-500">{data.subscribersChange.toFixed(1)}%</span>
+                  <span className="text-rose-500">
+                    {data.subscribersChange.toFixed(1)}%
+                  </span>
                 </>
               )}
-              <span className="ml-1 text-muted-foreground">vs. mês anterior</span>
+              <span className="ml-1 text-muted-foreground">
+                vs. mês anterior
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -179,7 +220,8 @@ export function MRRMetrics() {
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="max-w-xs">
-                    Lifetime Value - Valor médio que um cliente gera durante todo seu relacionamento com a empresa
+                    Lifetime Value - Valor médio que um cliente gera durante
+                    todo seu relacionamento com a empresa
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -192,15 +234,21 @@ export function MRRMetrics() {
               {data.ltvChange > 0 ? (
                 <>
                   <TrendingUp className="mr-1 size-3 text-emerald-500" />
-                  <span className="text-emerald-500">+{data.ltvChange.toFixed(1)}%</span>
+                  <span className="text-emerald-500">
+                    +{data.ltvChange.toFixed(1)}%
+                  </span>
                 </>
               ) : (
                 <>
                   <TrendingDown className="mr-1 size-3 text-rose-500" />
-                  <span className="text-rose-500">{data.ltvChange.toFixed(1)}%</span>
+                  <span className="text-rose-500">
+                    {data.ltvChange.toFixed(1)}%
+                  </span>
                 </>
               )}
-              <span className="ml-1 text-muted-foreground">vs. mês anterior</span>
+              <span className="ml-1 text-muted-foreground">
+                vs. mês anterior
+              </span>
             </div>
           </CardContent>
         </Card>

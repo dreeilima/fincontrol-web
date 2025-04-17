@@ -115,9 +115,18 @@ export function PricingCards({ userId, subscriptionPlan }: PricingCardsProps) {
                   : "",
               )}
               rounded="full"
-              onClick={() =>
-                router.push(`/register?plan=${offer.title.toLowerCase()}`)
-              }
+              onClick={() => {
+                if (
+                  offer.title.toLowerCase() === "básico" ||
+                  offer.title.toLowerCase() === "basico"
+                ) {
+                  // Para o plano básico, redireciona diretamente para o registro sem parâmetro de plano
+                  router.push(`/register`);
+                } else {
+                  // Para outros planos, mantém o comportamento atual
+                  router.push(`/register?plan=${offer.title.toLowerCase()}`);
+                }
+              }}
             >
               Começar agora
             </Button>

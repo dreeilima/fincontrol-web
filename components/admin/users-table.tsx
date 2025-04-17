@@ -88,24 +88,34 @@ export function UsersTable({ data }: UsersTableProps) {
   const handleToggleStatus = async (userId: string, currentStatus: boolean) => {
     try {
       setLoading(userId);
-      const response = await fetch(`/api/admin/users/${userId}/toggle-status`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      const response = await fetch(
+        `/api/admin/users/${userId}/toggle-status?t=${timestamp}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ isActive: !currentStatus }),
         },
-        body: JSON.stringify({ isActive: !currentStatus }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error("Falha ao alterar status");
       }
+
+      const data = await response.json();
+      console.log("Status do usuário alterado:", data);
 
       toast.success(
         `Usuário ${currentStatus ? "desativado" : "ativado"} com sucesso`,
       );
       router.refresh();
     } catch (error) {
-      toast.error("Erro ao alterar status do usuário");
+      console.error("Erro ao alterar status do usuário:", error);
+      toast.error("Erro ao alterar status do usuário. Tente novamente.");
     } finally {
       setLoading(null);
     }
@@ -122,23 +132,33 @@ export function UsersTable({ data }: UsersTableProps) {
 
     try {
       setLoading(selectedUser.id);
-      const response = await fetch(`/api/admin/users/${selectedUser.id}/role`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
+
+      // Adicionar timestamp para evitar cache
+      const timestamp = new Date().getTime();
+      const response = await fetch(
+        `/api/admin/users/${selectedUser.id}/role?t=${timestamp}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ role: newRole }),
         },
-        body: JSON.stringify({ role: newRole }),
-      });
+      );
 
       if (!response.ok) {
         throw new Error("Falha ao alterar função");
       }
 
+      const data = await response.json();
+      console.log("Função do usuário alterada:", data);
+
       toast.success("Função atualizada com sucesso");
       router.refresh();
       setEditingRole(false);
     } catch (error) {
-      toast.error("Erro ao alterar função do usuário");
+      console.error("Erro ao alterar função do usuário:", error);
+      toast.error("Erro ao alterar função do usuário. Tente novamente.");
     } finally {
       setLoading(null);
     }

@@ -20,7 +20,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DefaultCategories } from "./default-categories";
 import { FinancialMetrics } from "./metrics/financial-metrics";
 import { GrowthMetrics } from "./metrics/growth-metrics";
+import { MRRChart } from "./metrics/mrr-chart";
 import { MRRMetrics } from "./metrics/mrr-metrics";
+import { PlansDistributionChart } from "./metrics/plans-distribution-chart";
 import { RetentionChart } from "./metrics/retention-chart";
 import { TopUsersTable } from "./top-users-table";
 
@@ -51,22 +53,34 @@ export function AdminDashboard() {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await fetch("/api/admin/metrics");
+
+        // Adicionar timestamp para evitar cache
+        const timestamp = new Date().getTime();
+        const response = await fetch(`/api/admin/metrics?t=${timestamp}`);
+
         if (!response.ok) {
           throw new Error("Erro ao carregar métricas");
         }
+
         const data = await response.json();
+        console.log("Dados de métricas carregados:", data);
         setMetrics(data);
       } catch (error) {
-        console.error(error);
+        console.error("Erro ao carregar métricas:", error);
         setError("Não foi possível carregar as métricas do sistema");
-        toast.error("Erro ao carregar dados");
+        toast.error("Erro ao carregar dados. Tente novamente.");
       } finally {
         setIsLoading(false);
       }
     }
 
     fetchMetrics();
+
+    // Configurar atualização automática a cada 5 minutos
+    const intervalId = setInterval(fetchMetrics, 5 * 60 * 1000);
+
+    // Limpar intervalo quando o componente for desmontado
+    return () => clearInterval(intervalId);
   }, []);
 
   if (error) {
@@ -187,25 +201,19 @@ export function AdminDashboard() {
         <section className="grid gap-6 lg:grid-cols-2">
           <div className="rounded-lg border p-6">
             <h4 className="mb-4 text-base font-medium">Evolução do MRR</h4>
-            <Skeleton className="h-[300px]" />
+            <MRRChart />
           </div>
           <div className="rounded-lg border p-6">
             <h4 className="mb-4 text-base font-medium">
               Distribuição de Planos
             </h4>
-            <Skeleton className="h-[300px]" />
+            <PlansDistributionChart />
           </div>
         </section>
       </TabsContent>
 
       <TabsContent value="categories">
         <div className="rounded-lg border p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-medium">Categorias Padrão</h3>
-            <p className="text-sm text-muted-foreground">
-              Gerencie as categorias padrão disponíveis para todos os usuários
-            </p>
-          </div>
           <DefaultCategories />
         </div>
       </TabsContent>

@@ -71,7 +71,7 @@ export const pricingData: SubscriptionPlan[] = [
   },
 ];
 
-export const plansColumns = ["básico", "premium"] as const;
+export const plansColumns = ["basico", "premium"] as const;
 
 export const comparePlans: PlansRow[] = [
   {

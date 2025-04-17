@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTransactions } from "@/contexts/transactions-context";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/use-toast";
+import { PremiumUpgradeDialog } from "@/components/upgrade/premium-upgrade-dialog";
 
 const categoryFormSchema = z.object({
   name: z.string().min(2, {
@@ -66,6 +67,20 @@ export function CategoryForm({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const isEditing = !!category;
 
+  // Estado para controlar o diálogo de upgrade
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [systemSettings, setSystemSettings] = useState<{
+    max_categories: number | null;
+  }>({ max_categories: null });
+
+  // Buscar configurações do sistema
+  useEffect(() => {
+    fetch("/api/system-settings")
+      .then((res) => res.json())
+      .then((data) => setSystemSettings(data))
+      .catch((err) => console.error("Erro ao buscar configurações:", err));
+  }, []);
+
   const form = useForm<z.infer<typeof categoryFormSchema>>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: category
@@ -89,7 +104,17 @@ export function CategoryForm({
       if (isEditing && category) {
         await updateCategory(category.id, data as any);
       } else {
-        await createCategory(data as any);
+        try {
+          await createCategory(data as any);
+        } catch (error) {
+          // Verificar se o erro é devido ao limite de categorias
+          if (error instanceof Error && error.message.includes("Limite de")) {
+            // Mostrar diálogo de upgrade
+            setShowUpgradeDialog(true);
+            return;
+          }
+          throw error; // Re-lançar o erro para ser tratado no catch externo
+        }
       }
 
       toast({
@@ -214,6 +239,16 @@ export function CategoryForm({
               : "Criar Categoria"}
         </Button>
       </form>
+
+      {/* Diálogo de upgrade para o plano premium */}
+      {showUpgradeDialog && (
+        <PremiumUpgradeDialog
+          isOpen={showUpgradeDialog}
+          onClose={() => setShowUpgradeDialog(false)}
+          limitType="categories"
+          currentLimit={systemSettings.max_categories || 10}
+        />
+      )}
     </Form>
   );
 }

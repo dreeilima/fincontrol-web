@@ -17,10 +17,21 @@ export async function PATCH(
     const body = await req.json();
     const { name, type, color, icon } = body;
 
+    // Primeiro, verificamos se a categoria existe
+    const existingCategory = await db.categories.findUnique({
+      where: {
+        id: params.categoryId,
+      },
+    });
+
+    if (!existingCategory) {
+      return new NextResponse("Categoria não encontrada", { status: 404 });
+    }
+
+    // Agora atualizamos a categoria
     const category = await db.categories.update({
       where: {
         id: params.categoryId,
-        is_default: true,
       },
       data: {
         name,
@@ -51,7 +62,6 @@ export async function DELETE(
     const category = await db.categories.findUnique({
       where: {
         id: params.categoryId,
-        user_id: session.user.id,
       },
     });
 
@@ -62,7 +72,6 @@ export async function DELETE(
     await db.categories.delete({
       where: {
         id: params.categoryId,
-        user_id: session.user.id,
       },
     });
 
